@@ -49,11 +49,11 @@ prompt: |
   If you encounter a blocker:
   1. Update ticket status: `./tickets update <TICKET_ID> --status blocked`
   2. Add comment explaining the blocker
-  3. Stop after reporting the blocker - Prophet Codex will handle it
+  3. Stop after reporting the blocker - Squad Orchestrator will handle it
 
-  ## If you need input from Prophet
+  ## If you need input from Squad Orchestrator
 
-  Use `/squad:waiting` when you have a question that requires a decision from Prophet:
+  Use `/squad:waiting` when you have a question that requires a decision from Squad Orchestrator:
 
   ```
   /squad:waiting "Your question here - e.g., OAuth or JWT for auth?"
@@ -61,12 +61,12 @@ prompt: |
 
   The skill will:
   1. Set your ticket to "waiting" status
-  2. Create a signal for Prophet
+  2. Create a signal for Squad Orchestrator
   3. Tell you to wait for the response
 
   **Then:**
-  - Wait for Prophet's response (they will use `/squad:respond`)
-  - You will receive a message "Prophet: <response>"
+  - Wait for Squad Orchestrator's response (they will use `/squad:respond`)
+  - You will receive a message "Squad Orchestrator: <response>"
   - Continue your work with the received response
 
   **DO NOT:**

@@ -27,11 +27,11 @@ This story finalizes the system by integrating the CLIs together, creating start
 
 ### Deliverables
 
-1. `restart-prophet-claude.sh` script to start Prophet Claude
+1. `restart-squad-orchestrator.sh` script to start Squad Orchestrator
 2. claude-cli + context-cli integration (--role flag)
 3. Wrapper scripts to simplify commands
 4. Complete workflow documentation
-5. Basic CLAUDE.md for Prophet Claude
+5. Basic CLAUDE.md for Squad Orchestrator
 
 ---
 
@@ -39,7 +39,7 @@ This story finalizes the system by integrating the CLIs together, creating start
 
 ### In Scope
 
-- Prophet Claude startup script
+- Squad Orchestrator startup script
 - --role integration between claude-cli and context-cli
 - Wrapper scripts (claude, context, tickets)
 - Main README with complete workflow
@@ -58,8 +58,8 @@ This story finalizes the system by integrating the CLIs together, creating start
 
 ### Startup Script
 
-- [ ] `./restart-prophet-claude.sh` starts Prophet Claude
-- [ ] Applies the prophet-claude role context
+- [ ] `./restart-squad-orchestrator.sh` starts Squad Orchestrator
+- [ ] Applies the orchestrator role context
 - [ ] Generates settings.json from context-cli
 - [ ] Can be relaunched without issues (idempotent)
 
@@ -84,7 +84,7 @@ This story finalizes the system by integrating the CLIs together, creating start
   - [ ] Quick start (5 min)
   - [ ] Complete workflow documented
   - [ ] Command reference
-- [ ] Minimal CLAUDE.md for Prophet Claude
+- [ ] Minimal CLAUDE.md for Squad Orchestrator
 
 ---
 
@@ -95,8 +95,8 @@ This story finalizes the system by integrating the CLIs together, creating start
 ```
 bootstrap/
 ├── README.md                     # Main documentation
-├── CLAUDE.md                     # Prophet context (minimal)
-├── restart-prophet-claude.sh     # Startup script
+├── CLAUDE.md                     # Squad Orchestrator context (minimal)
+├── restart-squad-orchestrator.sh     # Startup script
 ├── claude                        # Wrapper → claude-cli
 ├── context                       # Wrapper → context-cli
 ├── tickets                       # Wrapper → tickets-cli
@@ -108,11 +108,11 @@ bootstrap/
     └── ...
 ```
 
-### restart-prophet-claude.sh
+### restart-squad-orchestrator.sh
 
 ```bash
 #!/bin/bash
-# Restart Prophet Claude with proper context
+# Restart Squad Orchestrator with proper context
 
 set -e
 
@@ -120,18 +120,18 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
 echo "Generating settings.json..."
-cd context-cli && uv run python main.py settings prophet-claude > ../settings.json
+cd context-cli && uv run python main.py settings orchestrator > ../settings.json
 cd ..
 
-echo "Starting Prophet Claude..."
+echo "Starting Squad Orchestrator..."
 # Kill existing if any
-tmux kill-session -t prophet-claude 2>/dev/null || true
+tmux kill-session -t orchestrator 2>/dev/null || true
 
 # Start new session
-tmux new-session -d -s prophet-claude "claude --settings settings.json"
+tmux new-session -d -s orchestrator "claude --settings settings.json"
 
-echo "Prophet Claude started!"
-echo "Attach with: tmux attach -t prophet-claude"
+echo "Squad Orchestrator started!"
+echo "Attach with: tmux attach -t orchestrator"
 ```
 
 ### Wrapper Scripts
@@ -167,9 +167,9 @@ else:
 ### Minimal CLAUDE.md
 
 ```markdown
-# Prophet Claude
+# Squad Orchestrator
 
-You are Prophet Claude, the orchestrator of a multi-Claude system.
+You are Squad Orchestrator, the orchestrator of a multi-Claude system.
 
 ## Quick Reference
 
@@ -186,7 +186,7 @@ You are Prophet Claude, the orchestrator of a multi-Claude system.
 
 ## Context
 
-Full context is managed by context-cli. See `./context show prophet-claude`.
+Full context is managed by context-cli. See `./context show orchestrator`.
 ```
 
 ### README.md Structure
@@ -210,7 +210,7 @@ Orchestrate multiple Claude instances for parallel, asynchronous work.
 ## Quick Start
 
 1. Clone and setup
-2. Start Prophet Claude
+2. Start Squad Orchestrator
 3. Delegate your first task
 
 ## Workflow
@@ -251,7 +251,7 @@ Orchestrate multiple Claude instances for parallel, asynchronous work.
 
 ## Definition of Done
 
-- [ ] `./restart-prophet-claude.sh` works
+- [ ] `./restart-squad-orchestrator.sh` works
 - [ ] `./claude spawn --role worker "test"` works
 - [ ] Wrapper scripts created and executable
 - [ ] README.md complete
@@ -265,11 +265,11 @@ Orchestrate multiple Claude instances for parallel, asynchronous work.
 ### End-to-End Test
 
 ```bash
-# 1. Start Prophet Claude
-./restart-prophet-claude.sh
-tmux attach -t prophet-claude
+# 1. Start Squad Orchestrator
+./restart-squad-orchestrator.sh
+tmux attach -t orchestrator
 
-# 2. In Prophet Claude, delegate a task
+# 2. In Squad Orchestrator, delegate a task
 ./claude spawn --role worker --name test-worker "List files in /tmp and exit"
 
 # 3. Check the worker

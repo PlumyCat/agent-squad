@@ -37,4 +37,4 @@ For each worker, display:
 ## Notes
 
 - Codex sessions prefixed with `codex-` unless explicitly named
-- Prophet Codex: `prophet-codex` session
+- Squad Orchestrator: `squad-orchestrator` session

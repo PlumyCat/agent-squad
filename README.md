@@ -10,7 +10,7 @@ Multi-agent Codex orchestration system enabling task delegation to isolated work
 │                       │                             │
 │                       ▼                             │
 │  ┌─────────────────────────────────────────────┐    │
-│  │             PROPHET CODEX                   │    │
+│  │          SQUAD ORCHESTRATOR                 │    │
 │  │            (Orchestrator)                   │    │
 │  │                                             │    │
 │  │  • Receives requests                        │    │
@@ -40,8 +40,8 @@ Multi-agent Codex orchestration system enabling task delegation to isolated work
 ### Setup
 
 ```bash
-git clone https://github.com/PlumyCat/codex-prophet.git
-cd codex-prophet
+git clone https://github.com/PlumyCat/agent-squad.git
+cd agent-squad
 
 # Install dependencies for each CLI
 cd claude-cli && uv sync && cd ..
@@ -55,13 +55,13 @@ cd tickets-cli && uv sync && cd ..
 ## Quick Start
 
 ```bash
-# 1. Start Prophet Codex
-./restart-prophet-codex.sh
+# 1. Start Squad Orchestrator
+./restart-squad-orchestrator.sh
 
 # 2. Attach to the session
-tmux attach -t prophet-codex
+tmux attach -t squad-orchestrator
 
-# 3. In Prophet Codex, delegate a task
+# 3. In Squad Orchestrator, delegate a task
 ./squad spawn --role worker --name my-task "Implement a fibonacci function"
 
 # 4. Check the worker
@@ -113,12 +113,12 @@ Delegated task tracking.
 ## Structure
 
 ```
-codex-prophet/
+agent-squad/
 ├── squad                     # Wrapper → worker manager CLI
 ├── claude                    # Backward-compatible wrapper
 ├── context                   # Wrapper → context-cli
 ├── tickets                   # Wrapper → tickets-cli
-├── restart-prophet-codex.sh  # Startup script
+├── restart-squad-orchestrator.sh # Startup script
 ├── install-skills.sh         # Installs Squad skills
 ├── claude-cli/               # Worker management CLI (historical directory name)
 ├── context-cli/              # Context management CLI
@@ -127,7 +127,7 @@ codex-prophet/
 ├── tickets-cli/              # Task tracking CLI
 │   └── tickets/              # JSON ticket storage
 ├── skills/squad-*             # Codex skills (Squad)
-│   ├── prophet/              # Prophet Codex management
+│   ├── orchestrator/              # Squad Orchestrator management
 │   ├── spawn/                # Spawn a worker
 │   ├── workers/              # List workers
 │   ├── capture/              # Capture output
@@ -148,7 +148,7 @@ Global skills available from any project (`~/.codex/skills/`).
 
 | Skill | Description |
 |-------|-------------|
-| `/squad:prophet` | (Re)launch Prophet Codex in tmux |
+| `/squad:orchestrator` | (Re)launch Squad Orchestrator in tmux |
 | `/squad:spawn` | Create a worker with options |
 | `/squad:workers` | List active workers |
 | `/squad:capture` | View worker output |
@@ -217,7 +217,7 @@ A 6-hour video transformed into a functional system with:
 
 Based on the Multi-Codex Bootstrap tutorial by [@claudecodeonly](https://www.twitch.tv/claudecodeonly).
 
-A big thank you for this 6-hour Twitch video presenting a truly innovative multi-agent orchestration system. The approach with Prophet Codex, tmux workers, and the ticket system is elegant and powerful.
+A big thank you for this 6-hour Twitch video presenting a truly innovative multi-agent orchestration system. The approach with Squad Orchestrator, tmux workers, and the ticket system is elegant and powerful.
 
 Source video: https://www.twitch.tv/claudecodeonly/video/2657952550
 

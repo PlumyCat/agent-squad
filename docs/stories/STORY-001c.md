@@ -23,12 +23,12 @@ So that **I can follow progress and coordinate asynchronous work**
 ## Description
 
 ### Background
-The tickets-cli allows managing tasks asynchronously. When Prophet Claude delegates a task, it creates a ticket. The worker is assigned to the ticket and updates its state. This allows tracking work in progress, blockers, and history.
+The tickets-cli allows managing tasks asynchronously. When Squad Orchestrator delegates a task, it creates a ticket. The worker is assigned to the ticket and updates its state. This allows tracking work in progress, blockers, and history.
 
 ### Workflow
 
 ```
-Prophet                          Worker
+Squad Orchestrator                          Worker
    │                                │
    ├─► tickets create "JWT Auth"    │
    │   └─► Ticket #abc123 created   │

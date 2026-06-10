@@ -6,7 +6,7 @@ allowed-tools: Bash, Read, Write
 
 # Respond - Respond to a Waiting Worker
 
-This skill allows Prophet Codex to respond to a worker waiting for a response via `/squad:waiting`.
+This skill allows Squad Orchestrator to respond to a worker waiting for a response via `/squad:waiting`.
 
 ## Usage
 
@@ -39,7 +39,7 @@ Create the file `./signals/responses/<session>.json`:
   "ticket_id": "<ticket-id-from-waiting>",
   "timestamp": "<ISO-8601>",
   "response": "<your response>",
-  "from": "prophet"
+  "from": "orchestrator"
 }
 ```
 
@@ -51,7 +51,7 @@ cat > ./signals/responses/<session>.json << 'EOF'
   "ticket_id": "<ticket-id>",
   "timestamp": "<timestamp>",
   "response": "<response>",
-  "from": "prophet"
+  "from": "orchestrator"
 }
 EOF
 ```
@@ -60,13 +60,13 @@ EOF
 
 ```bash
 ./tickets update <ticket-id> --status in-progress
-./tickets comment <ticket-id> "Prophet responded: <summary>"
+./tickets comment <ticket-id> "Squad Orchestrator responded: <summary>"
 ```
 
 ### 4. Send message to worker
 
 ```bash
-./squad send <session> "Prophet: <your response>"
+./squad send <session> "Squad Orchestrator: <your response>"
 ```
 
 ### 5. Delete the waiting signal
@@ -78,7 +78,7 @@ rm ./signals/waiting/<session>.json
 ## Complete Workflow
 
 ```
-Prophet sees worker waiting (via /squad:status)
+Squad Orchestrator sees worker waiting (via /squad:status)
        │
        ▼
   /squad:respond codex-auth "Use OAuth2"
@@ -86,7 +86,7 @@ Prophet sees worker waiting (via /squad:status)
        ├─► Read signals/waiting/codex-auth.json
        ├─► Write signals/responses/codex-auth.json
        ├─► tickets update → in-progress
-       ├─► ./squad send codex-auth "Prophet: ..."
+       ├─► ./squad send codex-auth "Squad Orchestrator: ..."
        ├─► rm signals/waiting/codex-auth.json
        │
        ▼

@@ -21,13 +21,13 @@ So that **I can delegate tasks to specialized Claude workers and multiply my pro
 ## Description
 
 ### Background
-The tutorial by @claudecodeonly (6h on Twitch) demonstrates an advanced multi-agent Claude orchestration pattern. The system allows a main "Prophet Claude" to delegate tasks to isolated Claude workers in tmux sessions, creating a parallel and asynchronous workflow.
+The tutorial by @claudecodeonly (6h on Twitch) demonstrates an advanced multi-agent Claude orchestration pattern. The system allows a main "Squad Orchestrator" to delegate tasks to isolated Claude workers in tmux sessions, creating a parallel and asynchronous workflow.
 
 ### Target Architecture
 
 ```
                     ┌─────────────────┐
-                    │  Prophet Claude │ ← Human interface
+                    │  Squad Orchestrator │ ← Human interface
                     │   (Principal)   │
                     └────────┬────────┘
                              │
@@ -49,7 +49,7 @@ The tutorial by @claudecodeonly (6h on Twitch) demonstrates an advanced multi-ag
    - `kill` / `kill-all`: Terminate workers
 
 2. **context-cli** - Role and context management
-   - YAML roles (prophet-claude.yaml, worker.yaml, manager.yaml)
+   - YAML roles (orchestrator.yaml, worker.yaml, manager.yaml)
    - Reusable modular directives
    - settings.json generation for permissions
 
@@ -79,7 +79,7 @@ The tutorial by @claudecodeonly (6h on Twitch) demonstrates an advanced multi-ag
   - roles/ and directives/ structure
   - `show <role>` command to display context
   - settings.json generation
-  - Base roles: prophet-claude, worker
+  - Base roles: orchestrator, worker
 
 - [ ] **Phase 3: tickets-cli**
   - CRUD tickets
@@ -88,7 +88,7 @@ The tutorial by @claudecodeonly (6h on Twitch) demonstrates an advanced multi-ag
 
 - [ ] **Phase 4: Integration**
   - Startup scripts (restart-claude.sh)
-  - Prophet → Worker workflow
+  - Squad Orchestrator → Worker workflow
   - Complete documentation
 
 ### Out of Scope (v1)
@@ -104,30 +104,30 @@ The tutorial by @claudecodeonly (6h on Twitch) demonstrates an advanced multi-ag
 
 ### Main Flow
 
-1. Developer launches Prophet Claude with `./restart-prophet-claude.sh`
-2. Prophet Claude receives a complex task
-3. Prophet delegates via `claude-cli spawn --role worker "Implement X"`
+1. Developer launches Squad Orchestrator with `./restart-squad-orchestrator.sh`
+2. Squad Orchestrator receives a complex task
+3. Squad Orchestrator delegates via `claude-cli spawn --role worker "Implement X"`
 4. Worker executes autonomously in its tmux session
-5. Prophet checks progress via `claude-cli capture <worker>`
+5. Squad Orchestrator checks progress via `claude-cli capture <worker>`
 6. Worker finishes and exits automatically (auto-exit)
-7. Prophet integrates the result and continues
+7. Squad Orchestrator integrates the result and continues
 
 ### Concrete Example
 
 ```bash
-# Prophet receives: "Add an authentication system"
+# Squad Orchestrator receives: "Add an authentication system"
 
-# Prophet delegates:
+# Squad Orchestrator delegates:
 claude-cli spawn --role worker --name auth-worker \
   "Implement JWT authentication in /src/auth.
    Create login/logout/refresh endpoints."
 
-# Prophet continues with something else...
+# Squad Orchestrator continues with something else...
 
-# Later, Prophet checks:
+# Later, Squad Orchestrator checks:
 claude-cli capture auth-worker --lines 50
 
-# If done, Prophet integrates the work
+# If done, Squad Orchestrator integrates the work
 ```
 
 ---
@@ -153,7 +153,7 @@ claude-cli capture auth-worker --lines 50
 - [ ] `list-roles` displays available roles
 - [ ] `list-directives` displays directives
 - [ ] `settings <role>` generates a valid settings.json
-- [ ] `prophet-claude` role defined with constraints
+- [ ] `orchestrator` role defined with constraints
 - [ ] `worker` role defined for delegated tasks
 
 ### tickets-cli
@@ -167,8 +167,8 @@ claude-cli capture auth-worker --lines 50
 
 ### Integration
 
-- [ ] `restart-prophet-claude.sh` script functional
-- [ ] Prophet Claude can spawn workers
+- [ ] `restart-squad-orchestrator.sh` script functional
+- [ ] Squad Orchestrator can spawn workers
 - [ ] Workers receive proper context via `--role`
 - [ ] README documentation for each CLI
 
@@ -195,7 +195,7 @@ bootstrap/
 │   ├── pyproject.toml
 │   ├── main.py
 │   ├── roles/
-│   │   ├── prophet-claude.yaml
+│   │   ├── orchestrator.yaml
 │   │   └── worker.yaml
 │   ├── directives/
 │   │   ├── base.yaml
@@ -206,8 +206,8 @@ bootstrap/
 │   ├── main.py
 │   ├── tickets/          # JSON/YAML storage
 │   └── README.md
-├── CLAUDE.md             # Prophet context (can be empty if using context-cli)
-├── restart-prophet-claude.sh
+├── CLAUDE.md             # Squad Orchestrator context (can be empty if using context-cli)
+├── restart-squad-orchestrator.sh
 └── memories/             # Persistent memories per Claude
 ```
 
@@ -289,9 +289,9 @@ pyyaml = "^6.0"
 - [ ] Code implemented and committed
 - [ ] Manual tests passed for each command
 - [ ] README documented for each CLI
-- [ ] Complete workflow tested: Prophet → spawn → capture → integration
-- [ ] At least 2 roles defined (prophet-claude, worker)
-- [ ] restart-prophet-claude.sh script functional
+- [ ] Complete workflow tested: Squad Orchestrator → spawn → capture → integration
+- [ ] At least 2 roles defined (orchestrator, worker)
+- [ ] restart-squad-orchestrator.sh script functional
 - [ ] No errors during normal execution
 
 ---

@@ -14,7 +14,7 @@ uv sync
 ```
 context-cli/
 ├── roles/
-│   ├── prophet-claude.yaml
+│   ├── orchestrator.yaml
 │   └── worker.yaml
 ├── directives/
 │   ├── base.yaml
@@ -46,7 +46,7 @@ Displays the complete context for a role (prompt + directives).
 
 ```bash
 uv run python main.py show worker
-uv run python main.py show prophet-claude
+uv run python main.py show orchestrator
 ```
 
 ### settings
@@ -55,10 +55,10 @@ Generates a settings.json with the role's permissions.
 
 ```bash
 # Display to stdout
-uv run python main.py settings prophet-claude
+uv run python main.py settings orchestrator
 
 # Save to a file
-uv run python main.py settings prophet-claude -o settings.json
+uv run python main.py settings orchestrator -o settings.json
 ```
 
 ### validate

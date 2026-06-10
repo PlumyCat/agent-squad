@@ -1,38 +1,38 @@
 #!/bin/bash
-# Restart Prophet Codex with proper context
-# Usage: ./restart-prophet-claude.sh
+# Restart Squad Orchestrator with proper context
+# Usage: ./restart-squad-orchestrator.sh
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
-echo "=== Prophet Codex Bootstrap ==="
+echo "=== Squad Orchestrator Bootstrap ==="
 echo ""
 
 # Generate settings.json from context-cli
-echo "Generating settings.json for prophet-claude role..."
+echo "Generating settings.json for orchestrator role..."
 cd context-cli
-uv run python main.py settings prophet-claude -o ../settings.json
+uv run python main.py settings orchestrator -o ../settings.json
 cd ..
 echo "  ✓ settings.json created"
 
-# Kill existing prophet-codex session if any
-if tmux has-session -t prophet-codex 2>/dev/null; then
-    echo "Killing existing prophet-codex session..."
-    tmux kill-session -t prophet-codex
+# Kill existing squad-orchestrator session if any
+if tmux has-session -t squad-orchestrator 2>/dev/null; then
+    echo "Killing existing squad-orchestrator session..."
+    tmux kill-session -t squad-orchestrator
     echo "  ✓ Old session terminated"
 fi
 
 # Start new session with codex (bypass approvals/sandbox for autonomous local orchestration)
-echo "Starting Prophet Codex..."
-tmux new-session -d -s prophet-codex -c "$SCRIPT_DIR" "codex --dangerously-bypass-approvals-and-sandbox --ask-for-approval never --sandbox danger-full-access --cd '$SCRIPT_DIR' --no-alt-screen"
+echo "Starting Squad Orchestrator..."
+tmux new-session -d -s squad-orchestrator -c "$SCRIPT_DIR" "codex --dangerously-bypass-approvals-and-sandbox --ask-for-approval never --sandbox danger-full-access --cd '$SCRIPT_DIR' --no-alt-screen"
 
 # Wait for Codex to start
 sleep 2
 
 # Send initial context
-INIT_PROMPT="You are now Prophet Codex. Your context has been loaded from context-cli.
+INIT_PROMPT="You are now Squad Orchestrator. Your context has been loaded from context-cli.
 
 Available commands:
 - ./squad spawn --name <name> \"task\" - Spawn a Codex worker
@@ -44,13 +44,13 @@ Available commands:
 
 Ready to receive tasks. What would you like me to help with?"
 
-tmux send-keys -t prophet-codex "$INIT_PROMPT" Enter
+tmux send-keys -t squad-orchestrator "$INIT_PROMPT" Enter
 
 echo ""
-echo "=== Prophet Codex Started ==="
+echo "=== Squad Orchestrator Started ==="
 echo ""
 echo "Attach with:"
-echo "  tmux attach -t prophet-codex"
+echo "  tmux attach -t squad-orchestrator"
 echo ""
 echo "Or run commands directly:"
 echo "  ./squad list"

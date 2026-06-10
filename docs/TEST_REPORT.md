@@ -1,7 +1,7 @@
 # Multi-Claude Bootstrap Test Report
 
 **Date:** 2025-01-28
-**Session:** Prophet Claude (41e9aea7)
+**Session:** Squad Orchestrator (41e9aea7)
 
 ---
 
@@ -44,7 +44,7 @@
 1. **Auto-submit prompt**: currently requires `send-keys` + Enter
 2. **Permissions**: manual confirmations block autonomy
 3. **Auto-exit**: workers don't automatically `/exit`
-4. **Prophet UX**: no scroll in the discussion thread
+4. **Squad Orchestrator UX**: no scroll in the discussion thread
 
 ---
 

@@ -23,14 +23,14 @@ So that **each worker has the right context and permissions for its task**
 ## Description
 
 ### Background
-The context-cli allows structuring Claude contexts in a modular way. Instead of a large monolithic CLAUDE.md, we define roles (prophet-claude, worker, manager) and reusable directives (code-quality, security, etc.). The CLI then generates the complete context and can produce a settings.json for permissions.
+The context-cli allows structuring Claude contexts in a modular way. Instead of a large monolithic CLAUDE.md, we define roles (orchestrator, worker, manager) and reusable directives (code-quality, security, etc.). The CLI then generates the complete context and can produce a settings.json for permissions.
 
 ### Architecture
 
 ```
 context-cli/
 ├── roles/
-│   ├── prophet-claude.yaml    # Main orchestrator
+│   ├── orchestrator.yaml    # Main orchestrator
 │   ├── worker.yaml            # Generic worker
 │   └── code-reviewer.yaml     # Specialized worker
 ├── directives/
@@ -51,7 +51,7 @@ context-cli/
 - `list-roles` command: lists available roles
 - `list-directives` command: lists directives
 - `settings <role>` command: generates settings.json
-- Base roles: prophet-claude, worker
+- Base roles: orchestrator, worker
 - Base directives: base, code-quality
 
 ### Out of Scope
@@ -73,7 +73,7 @@ context-cli/
 
 ### show command
 
-- [ ] `context show prophet-claude` displays combined context
+- [ ] `context show orchestrator` displays combined context
 - [ ] Role prompt is included
 - [ ] Listed directives are resolved and included
 - [ ] Clear error if role doesn't exist
@@ -90,13 +90,13 @@ context-cli/
 
 ### settings command
 
-- [ ] `context settings prophet-claude` generates valid JSON
+- [ ] `context settings orchestrator` generates valid JSON
 - [ ] JSON contains allow/deny permissions
 - [ ] Can be redirected to a file
 
 ### Base Roles
 
-- [ ] `prophet-claude`: orchestrator, delegates to workers
+- [ ] `orchestrator`: orchestrator, delegates to workers
 - [ ] `worker`: executes a specific task, exits with /exit
 
 ---
@@ -106,12 +106,12 @@ context-cli/
 ### YAML Role Format
 
 ```yaml
-# roles/prophet-claude.yaml
-name: prophet-claude
+# roles/orchestrator.yaml
+name: orchestrator
 description: Main orchestrator Claude, delegates to workers
 
 prompt: |
-  You are Prophet Claude, the orchestrator of a multi-Claude system.
+  You are Squad Orchestrator, the orchestrator of a multi-Claude system.
 
   CORE RESPONSIBILITIES:
   - Receive tasks from the human
@@ -272,7 +272,7 @@ if __name__ == "__main__":
 
 - [ ] Project created with `uv init`
 - [ ] roles/ and directives/ structure created
-- [ ] 2 roles defined: prophet-claude, worker
+- [ ] 2 roles defined: orchestrator, worker
 - [ ] 2 directives defined: base, code-quality
 - [ ] 4 commands functional
 - [ ] README.md documented
@@ -287,7 +287,7 @@ cd context-cli
 
 # Test list-roles
 uv run python main.py list-roles
-# Expected: prophet-claude, worker
+# Expected: orchestrator, worker
 
 # Test list-directives
 uv run python main.py list-directives
@@ -298,7 +298,7 @@ uv run python main.py show worker
 # Expected: Combined context output
 
 # Test settings
-uv run python main.py settings prophet-claude > settings.json
+uv run python main.py settings orchestrator > settings.json
 cat settings.json
 # Expected: Valid JSON with permissions
 ```

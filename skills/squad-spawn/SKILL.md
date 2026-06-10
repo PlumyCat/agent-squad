@@ -11,7 +11,7 @@ Creates a new worker in an isolated tmux session.
 ## Parameters to Collect
 
 1. **Name** (optional): Descriptive name for the worker
-2. **Role** (optional): Predefined context (`worker`, `prophet-claude`)
+2. **Role** (optional): Predefined context (`worker`, `orchestrator`)
 3. **Ticket** (optional): Ticket ID to associate
 4. **Skill** (optional): Skills to activate at startup (repeatable)
 5. **Task** (required): The prompt/instruction for the worker

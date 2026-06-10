@@ -12,7 +12,7 @@
 
 ## User Story
 
-As a **Prophet Claude**
+As a **Squad Orchestrator**
 I want to **have more autonomous workers and better tracking**
 So that **the delegation workflow is smoother and less manual**
 

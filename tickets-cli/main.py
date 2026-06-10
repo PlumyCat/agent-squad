@@ -74,7 +74,7 @@ def format_status_icon(status: str) -> str:
 def cli():
     """Tickets CLI - Track delegated tasks for Multi-Claude orchestration.
 
-    This CLI helps Prophet Claude track tasks delegated to worker Claudes.
+    This CLI helps Squad Orchestrator track tasks delegated to worker Claudes.
     Each task becomes a ticket that can be assigned, updated, and tracked.
     """
     ensure_tickets_dir()

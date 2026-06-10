@@ -70,7 +70,7 @@ The `.env` file contains:
 The tutorial covers creating a multi-agent Claude system:
 
 ### Architecture
-- **Prophet Claude**: Main orchestrator, human interface
+- **Squad Orchestrator**: Main orchestrator, human interface
 - **Workers**: Delegated agents in separate tmux sessions
 - **Managers**: Middle-manager, stream-manager for coordination
 
@@ -82,7 +82,7 @@ The tutorial covers creating a multi-agent Claude system:
 ### Key Concepts
 - Tmux sessions to isolate workers
 - CLAUDE.md for context persistence
-- YAML roles (prophet-claude.yaml, worker.yaml)
+- YAML roles (orchestrator.yaml, worker.yaml)
 - Reusable modular directives
 - Named Claudes with canonical memories
 

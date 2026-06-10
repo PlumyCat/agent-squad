@@ -12,7 +12,7 @@ uv sync
 ## Concept
 
 ```
-Prophet Codex                          Worker Codex
+Squad Orchestrator                          Worker Codex
       │                                       │
       ├─► tickets create "JWT Auth"           │
       │   └─► Ticket #abc123 created          │
@@ -180,14 +180,14 @@ Ticket format:
 Typical workflow:
 
 ```bash
-# 1. Prophet creates a ticket
+# 1. Squad Orchestrator creates a ticket
 ./tickets create "Implement feature X" --body "Details..."
 
-# 2. Prophet assigns and spawns the worker
+# 2. Squad Orchestrator assigns and spawns the worker
 ./tickets assign abc123 feature-worker
 ./squad spawn --name feature-worker --role worker "Implement feature X"
 
-# 3. Prophet checks the status
+# 3. Squad Orchestrator checks the status
 ./tickets list
 ./tickets show abc123
 

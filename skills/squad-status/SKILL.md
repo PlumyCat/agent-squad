@@ -10,9 +10,9 @@ Overview of the Codex Squad system.
 
 ## Commands to Execute
 
-### 1. Prophet Codex Status
+### 1. Squad Orchestrator Status
 ```bash
-tmux has-session -t prophet-codex 2>/dev/null && echo "Prophet Codex: RUNNING" || echo "Prophet Codex: STOPPED"
+tmux has-session -t squad-orchestrator 2>/dev/null && echo "Squad Orchestrator: RUNNING" || echo "Squad Orchestrator: STOPPED"
 ```
 
 ### 2. Active Workers
@@ -54,7 +54,7 @@ done 2>/dev/null
 ```
 === Multi-Codex System Status ===
 
-Prophet Codex: [RUNNING/STOPPED]
+Squad Orchestrator: [RUNNING/STOPPED]
 
 Active workers: X
   - codex-neon-spark (running)
@@ -75,7 +75,7 @@ Tmux sessions: X total
 
 ## Recommended Actions
 
-- Prophet STOPPED → `/squad:prophet`
+- Squad Orchestrator STOPPED → `/squad:orchestrator`
 - Tickets BLOCKED → Investigate
 - Tickets WAITING → `/squad:respond <session> "response"`
 - No workers but tickets in-progress → Check `/squad:capture`

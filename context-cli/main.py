@@ -3,10 +3,10 @@
 Context CLI - Manage roles and directives for Claude workers.
 
 Usage:
-    uv run python main.py show prophet-claude
+    uv run python main.py show orchestrator
     uv run python main.py list-roles
     uv run python main.py list-directives
-    uv run python main.py settings prophet-claude
+    uv run python main.py settings orchestrator
 """
 
 import json
@@ -73,7 +73,7 @@ def show(role_name: str):
     Displays the role prompt and all included directives.
 
     Example:
-        show prophet-claude
+        show orchestrator
         show worker
     """
     role = load_role(role_name)
@@ -157,8 +157,8 @@ def settings(role_name: str, output: str | None):
     defined in the role.
 
     Examples:
-        settings prophet-claude
-        settings prophet-claude -o settings.json
+        settings orchestrator
+        settings orchestrator -o settings.json
     """
     role = load_role(role_name)
 
@@ -189,7 +189,7 @@ def validate(role_name: str):
     directives are available.
 
     Example:
-        validate prophet-claude
+        validate orchestrator
     """
     role = load_role(role_name)
     errors = []

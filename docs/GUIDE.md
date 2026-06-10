@@ -20,7 +20,7 @@
 
 ### What is Codex Squad?
 
-A system for orchestrating **multiple Codex instances** working in parallel. A main Codex ("Prophet Codex") delegates tasks to isolated workers in tmux sessions.
+A system for orchestrating **multiple Codex instances** working in parallel. A main Codex ("Squad Orchestrator") delegates tasks to isolated workers in tmux sessions.
 
 ### Why use this system?
 
@@ -50,7 +50,7 @@ A system for orchestrating **multiple Codex instances** working in parallel. A m
 │                           │                                     │
 │                           ▼                                     │
 │  ┌─────────────────────────────────────────────────────────┐    │
-│  │                   PROPHET CLAUDE                        │    │
+│  │                   SQUAD ORCHESTRATOR                        │    │
 │  │                   (Orchestrator)                        │    │
 │  │                                                         │    │
 │  │  • Receives human requests                              │    │
@@ -102,7 +102,7 @@ bootstrap/
 │   └── update           # Change status
 │
 └── scripts/
-    └── restart-prophet-codex.sh
+    └── restart-squad-orchestrator.sh
 ```
 
 ### Data Flow
@@ -176,27 +176,27 @@ uv add click
 # Create wrapper scripts
 cd ..
 # ... create squad, context, tickets scripts
-chmod +x squad context tickets restart-prophet-codex.sh
+chmod +x squad context tickets restart-squad-orchestrator.sh
 ```
 
 ---
 
 ## Quick Start
 
-### 1. Start Prophet Codex
+### 1. Start Squad Orchestrator
 
 ```bash
 cd ~/workspace/bootstrap
-./restart-prophet-codex.sh
+./restart-squad-orchestrator.sh
 
 # Or manually:
-tmux new-session -d -s prophet-codex "codex --no-alt-screen"
-tmux attach -t prophet-codex
+tmux new-session -d -s squad-orchestrator "codex --no-alt-screen"
+tmux attach -t squad-orchestrator
 ```
 
 ### 2. Delegate your first task
 
-In Prophet Codex:
+In Squad Orchestrator:
 
 ```bash
 # Spawn a worker
@@ -228,15 +228,15 @@ In Prophet Codex:
 
 ## Key Concepts
 
-### Prophet Codex vs Workers
+### Squad Orchestrator vs Workers
 
-| Aspect | Prophet Codex | Worker Codex |
+| Aspect | Squad Orchestrator | Worker Codex |
 |--------|----------------|---------------|
 | **Role** | Orchestrator | Executor |
 | **Lifespan** | Permanent | Temporary |
 | **Context** | Complete (system) | Specialized (task) |
 | **Actions** | Delegate, supervise | Implement, report |
-| **Tmux session** | `prophet-codex` | `codex-neon-spark` |
+| **Tmux session** | `squad-orchestrator` | `codex-neon-spark` |
 
 ### Tmux Sessions
 
@@ -245,7 +245,7 @@ In Prophet Codex:
 │ tmux server                                         │
 │                                                     │
 │  ┌─────────────────────┐  ┌─────────────────────┐   │
-│  │ prophet-codex      │  │ codex-abc12345     │   │
+│  │ squad-orchestrator      │  │ codex-abc12345     │   │
 │  │ (attached)          │  │ (detached)          │   │
 │  │                     │  │                     │   │
 │  │ Human ◄──► Codex   │  │ Worker Codex       │   │
@@ -320,7 +320,7 @@ directives/code-quality.yaml:
 │  1. Human requests a complex task                       │
 │     │                                                   │
 │     ▼                                                   │
-│  2. Prophet Codex analyzes and decomposes              │
+│  2. Squad Orchestrator analyzes and decomposes              │
 │     │                                                   │
 │     ├─────────────────────────────────────────┐         │
 │     ▼                                         ▼         │
@@ -334,7 +334,7 @@ directives/code-quality.yaml:
 │     │                                         │         │
 │     └─────────────────┬───────────────────────┘         │
 │                       ▼                                 │
-│  6. Prophet Codex integrates results                   │
+│  6. Squad Orchestrator integrates results                   │
 │     │                                                   │
 │     ▼                                                   │
 │  7. Human receives complete deliverable                 │
@@ -345,7 +345,7 @@ directives/code-quality.yaml:
 ### Advanced Workflow: With Tickets
 
 ```bash
-# Prophet Codex receives: "Add JWT authentication"
+# Squad Orchestrator receives: "Add JWT authentication"
 
 # 1. Create the ticket
 ./tickets create "Implement JWT Auth" --body "Backend + Frontend"
@@ -400,7 +400,7 @@ directives/code-quality.yaml:
 | `show` | Display context | `./context show worker` |
 | `list-roles` | List roles | `./context list-roles` |
 | `list-directives` | List directives | `./context list-directives` |
-| `settings` | Generate settings.json | `./context settings prophet-codex` |
+| `settings` | Generate settings.json | `./context settings orchestrator` |
 
 ### tickets-cli
 
@@ -423,7 +423,7 @@ directives/code-quality.yaml:
 
 ## Best Practices
 
-### For Prophet Codex
+### For Squad Orchestrator
 
 ```
 ✅ DO:
@@ -539,14 +539,14 @@ tmux send-keys -t <session> "command" Enter
 ### Complete Session Example
 
 ```bash
-# Terminal 1: Prophet Codex
-./restart-prophet-codex.sh
-tmux attach -t prophet-codex
+# Terminal 1: Squad Orchestrator
+./restart-squad-orchestrator.sh
+tmux attach -t squad-orchestrator
 
-# In Prophet Codex:
+# In Squad Orchestrator:
 > Implement a Redis cache system for the API
 
-# Prophet responds and delegates:
+# Squad Orchestrator responds and delegates:
 ./squad spawn --role worker --name cache-impl \
   "Implement Redis caching in src/api/cache.py:
    - Connection pool
@@ -557,7 +557,7 @@ tmux attach -t prophet-codex
 ./squad spawn --role worker --name cache-tests \
   "Write tests for Redis cache in tests/test_cache.py"
 
-# Prophet checks:
+# Squad Orchestrator checks:
 ./squad list
 # cache-impl (running)
 # cache-tests (running)

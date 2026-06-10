@@ -50,4 +50,4 @@ Terminates one or more workers.
 
 - `kill` does not delete associated tickets
 - Workers should clearly report completion; the orchestrator can then kill the tmux session if it remains open
-- `kill-all` does NOT kill `prophet-codex`
+- `kill-all` does NOT kill `squad-orchestrator`

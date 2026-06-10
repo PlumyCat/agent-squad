@@ -1,22 +1,22 @@
 ---
 name: squad-waiting
-description: Signal that worker is waiting for Prophet response
+description: Signal that worker is waiting for Squad Orchestrator response
 allowed-tools: Bash, Read, Write
 ---
 
-# Waiting - Waiting for Prophet Response
+# Waiting - Waiting for Squad Orchestrator Response
 
-This skill allows a worker to signal that it needs a response from Prophet Codex before continuing.
+This skill allows a worker to signal that it needs a response from Squad Orchestrator before continuing.
 
 ## Usage
 
 ```
-/squad:waiting "Your question for Prophet"
+/squad:waiting "Your question for Squad Orchestrator"
 ```
 
 ## Parameters
 
-1. **Message** (required): The question or request for Prophet
+1. **Message** (required): The question or request for Squad Orchestrator
 2. **Ticket ID** (optional): If not provided, tries to detect from context
 
 ## Actions to Perform
@@ -34,7 +34,7 @@ If the ticket ID is not known, ask the user or search in context.
 
 ```bash
 ./tickets update <ticket-id> --status waiting
-./tickets comment <ticket-id> "Waiting for Prophet: <message>"
+./tickets comment <ticket-id> "Waiting for Squad Orchestrator: <message>"
 ```
 
 ### 3. Create the signal file
@@ -46,7 +46,7 @@ Write the JSON file to `./signals/waiting/<session>.json`:
   "session": "<session-name>",
   "ticket_id": "<ticket-id>",
   "timestamp": "<ISO-8601>",
-  "message": "<question for Prophet>",
+  "message": "<question for Squad Orchestrator>",
   "type": "question"
 }
 ```
@@ -81,8 +81,8 @@ cat ./signals/responses/<session>.json
 ### 5. Process the response
 
 Once the response is received:
-1. Read and display Prophet's response
-2. Delete the waiting signal file (Prophet has normally already done this)
+1. Read and display Squad Orchestrator's response
+2. Delete the waiting signal file (Squad Orchestrator has normally already done this)
 3. Continue work with the response
 
 ## Waiting Signal Format
@@ -105,7 +105,7 @@ Once the response is received:
   "ticket_id": "abc123",
   "timestamp": "2026-01-29T14:35:00Z",
   "response": "Use OAuth2 with refresh tokens",
-  "from": "prophet"
+  "from": "orchestrator"
 }
 ```
 
@@ -124,10 +124,10 @@ Worker has a question
   Worker waits (poll responses/)
        │
        ▼
-  Prophet sees via /squad:status
+  Squad Orchestrator sees via /squad:status
        │
        ▼
-  Prophet responds via /squad:respond
+  Squad Orchestrator responds via /squad:respond
        │
        ▼
   Worker reads the response
@@ -141,4 +141,4 @@ Worker has a question
 - **DO NOT** end the session while waiting
 - **DO NOT** continue with assumptions - wait for the response
 - If blocked too long, set ticket to `blocked` instead of `waiting`
-- Prophet will be notified via `/squad:status` of waiting workers
+- Squad Orchestrator will be notified via `/squad:status` of waiting workers

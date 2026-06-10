@@ -3,7 +3,7 @@
 ## Purpose
 
 - Codex Squad orchestre des workers Codex ou Claude dans des sessions tmux, avec contextes de role et suivi par tickets.
-- Le depot contient les wrappers, CLIs, skills Codex, roles, guides et scripts necessaires au workflow Prophet -> workers.
+- Le depot contient les wrappers, CLIs, skills Codex, roles, guides et scripts necessaires au workflow orchestrateur -> workers.
 
 ## Ownership
 
@@ -14,9 +14,9 @@
 
 - Les skills Codex installables vivent dans `skills/squad-*` et leur `name` de frontmatter doit rester aligné avec le nom du dossier.
 - Le CLI worker principal est exposé par `./squad` et implémenté dans `claude-cli/main.py`.
-- Les roles worker et Prophet vivent dans `context-cli/roles/`.
+- Les roles worker et orchestrateur vivent dans `context-cli/roles/`.
 - Les tickets locaux restent dans `tickets-cli/tickets/` et sont manipules via `./tickets`.
-- Les scripts de lancement Prophet doivent privilegier `restart-prophet-codex.sh`; `restart-prophet-claude.sh` reste un alias historique si present.
+- Les scripts de lancement de l'orchestrateur doivent privilegier `restart-squad-orchestrator.sh`.
 
 ## Work Guidance
 
@@ -38,5 +38,5 @@
 - `tickets-cli/` : suivi local des taches deleguees.
 - `skills/` : skills Codex installables, prefixes `squad-*`.
 - `docs/` : guides actifs et stories historiques.
-- `signals/` : fichiers de coordination waiting/responses entre Prophet et workers.
+- `signals/` : fichiers de coordination waiting/responses entre orchestrateur et workers.
 - `.squad-runs/` : scripts generes par session, non destines a etre edites manuellement.

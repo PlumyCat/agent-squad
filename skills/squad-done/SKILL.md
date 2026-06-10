@@ -24,7 +24,7 @@ This skill is intended for **workers** to signal that they have completed their 
 
 ### 3. Report completion
 
-IMPORTANT: Always make the completion state explicit so Prophet Codex can capture the result and clean up the tmux session if needed.
+IMPORTANT: Always make the completion state explicit so Squad Orchestrator can capture the result and clean up the tmux session if needed.
 
 ## Workflow
 
@@ -41,7 +41,7 @@ Worker completes its task
    Final completion report
        │
        ▼
-   Prophet captures result and cleans up session
+   Squad Orchestrator captures result and cleans up session
 ```
 
 ## Notes
