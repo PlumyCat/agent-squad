@@ -1,5 +1,5 @@
 ---
-name: mcbs-done
+name: squad-done
 description: Done - Task Completion
 allowed-tools: Bash
 ---
@@ -22,9 +22,9 @@ This skill is intended for **workers** to signal that they have completed their 
 ./tickets comment <ticket-id> "Task completed by worker"
 ```
 
-### 3. Remind /exit
+### 3. Report completion
 
-IMPORTANT: Always remind the worker to do `/exit` to free the tmux session.
+IMPORTANT: Always make the completion state explicit so Prophet Codex can capture the result and clean up the tmux session if needed.
 
 ## Workflow
 
@@ -32,22 +32,19 @@ IMPORTANT: Always remind the worker to do `/exit` to free the tmux session.
 Worker completes its task
        │
        ▼
-   /done <ticket-id>
+   /squad:done <ticket-id>
        │
        ├─► tickets update → done
        ├─► tickets comment → "Completed"
        │
        ▼
-   Reminder: /exit
+   Final completion report
        │
        ▼
-   Worker does /exit
-       │
-       ▼
-   Tmux session freed
+   Prophet captures result and cleans up session
 ```
 
 ## Notes
 
-- This skill does NOT do `/exit` automatically
-- If no ticket, just remind to do `/exit`
+- This skill does not clean up tmux automatically
+- If no ticket, clearly report that the task is complete

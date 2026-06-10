@@ -1,12 +1,12 @@
 ---
-name: mcbs-spawn
+name: squad-spawn
 description: Spawn Worker
 allowed-tools: Bash
 ---
 
 # Spawn Worker
 
-Creates a new Claude worker in an isolated tmux session.
+Creates a new worker in an isolated tmux session.
 
 ## Parameters to Collect
 
@@ -20,19 +20,19 @@ Creates a new Claude worker in an isolated tmux session.
 
 ```bash
 # Basic
-./claude spawn --name <name> "<task>"
+./squad spawn --name <name> "<task>"
 
 # With role (recommended)
-./claude spawn --name <name> --role worker "<task>"
+./squad spawn --name <name> --role worker "<task>"
 
 # With ticket (recommended for tracking)
-./claude spawn --name <name> --role worker --ticket <ticket-id> "<task>"
+./squad spawn --name <name> --role worker --ticket <ticket-id> "<task>"
 
 # With skills (for autonomy)
-./claude spawn --skill ralph-loop:ralph-loop "<task>"
+./squad spawn --skill ralph-loop:ralph-loop "<task>"
 
 # Combine multiple skills
-./claude spawn -s bmad:dev-story -s ralph-loop:ralph-loop "<task>"
+./squad spawn -s bmad:dev-story -s ralph-loop:ralph-loop "<task>"
 ```
 
 ## Ralph Loop Mode (--ralph)
@@ -40,8 +40,8 @@ Creates a new Claude worker in an isolated tmux session.
 For autonomous execution without intervention:
 
 ```bash
-./claude spawn --ralph "Long running task"
-./claude spawn --ralph --role worker --ticket abc123 "Complete feature"
+./squad spawn --ralph "Long running task"
+./squad spawn --ralph --role worker --ticket abc123 "Complete feature"
 ```
 
 Note: Avoid parentheses `()` in the prompt with --ralph (bash escaping issue).
@@ -61,14 +61,15 @@ Note: Avoid parentheses `()` in the prompt with --ralph (bash escaping issue).
 ./tickets create "<task-title>"
 
 # 2. Spawn with the ticket
-./claude spawn --name my-worker --role worker --ticket abc123 "<task>"
+./squad spawn --name my-worker --role worker --ticket abc123 "<task>"
 
 # 3. Verify
-./claude list
+./squad list
 ```
 
 ## Notes
 
-- Workers launched with `--dangerously-skip-permissions` for autonomy
-- The `worker` role includes end instructions (update ticket + /exit)
+- Codex workers are launched with bypassed approvals/sandbox for autonomy
+- Claude workers can still be launched with `--agent claude`
+- The `worker` role includes completion instructions for updating tickets
 - Use descriptive names and clear instructions

@@ -1,6 +1,6 @@
 # context-cli
 
-CLI for managing Claude worker roles and directives.
+CLI for managing worker roles and directives.
 
 ## Installation
 
@@ -75,7 +75,7 @@ uv run python main.py validate worker
 
 ```yaml
 name: worker
-description: Worker Claude for tasks
+description: Worker Codex for tasks
 
 prompt: |
   Your role prompt here...
@@ -102,10 +102,10 @@ content: |
   Your directive content here...
 ```
 
-## Integration with claude-cli
+## Integration with codex-cli
 
 ```bash
 # The --role flag loads context from context-cli
-cd ../claude-cli
+cd ../squad-cli
 uv run python main.py spawn --role worker "Implement feature X"
 ```

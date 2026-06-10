@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-Claude CLI - Spawn and manage Claude workers in tmux sessions.
+Squad CLI - Spawn and manage AI coding workers in tmux sessions.
 
 Usage:
     uv run python main.py spawn "Your prompt here"
-    uv run python main.py spawn --name my-worker "Your prompt"
+    uv run python main.py spawn --agent codex --name my-worker "Your prompt"
+    uv run python main.py spawn --agent claude --name my-worker "Your prompt"
     uv run python main.py capture my-worker --lines 50
     uv run python main.py list
     uv run python main.py kill my-worker
@@ -14,9 +15,71 @@ Usage:
 import subprocess
 import time
 import uuid
+import os
+import shlex
+import secrets
 from pathlib import Path
 
 import click
+
+
+AGENTS = {
+    "codex": {
+        "display": "Codex",
+        "prefix": "codex",
+        "interactive": False,
+        "command": lambda project_root, prompt: [
+            "codex",
+            "exec",
+            "--dangerously-bypass-approvals-and-sandbox",
+            "--sandbox",
+            "danger-full-access",
+            "--cd",
+            project_root,
+            prompt,
+        ],
+    },
+    "claude": {
+        "display": "Claude",
+        "prefix": "claude",
+        "interactive": True,
+        "command": lambda _project_root, _prompt: ["claude", "--dangerously-skip-permissions"],
+    },
+}
+
+NAME_ADJECTIVES = [
+    "brave",
+    "bright",
+    "cosmic",
+    "daring",
+    "electric",
+    "golden",
+    "lucky",
+    "neon",
+    "nimble",
+    "quantum",
+    "rapid",
+    "solar",
+    "turbo",
+    "velvet",
+]
+
+NAME_NOUNS = [
+    "beacon",
+    "circuit",
+    "comet",
+    "forge",
+    "lantern",
+    "nova",
+    "orbit",
+    "pixel",
+    "pulse",
+    "rocket",
+    "signal",
+    "spark",
+    "vector",
+    "vortex",
+]
 
 
 def run_tmux(*args: str) -> subprocess.CompletedProcess:
@@ -28,9 +91,48 @@ def run_tmux(*args: str) -> subprocess.CompletedProcess:
     )
 
 
-def generate_session_name() -> str:
-    """Generate a unique session name."""
-    return f"claude-{uuid.uuid4().hex[:8]}"
+def create_run_script(project_root: Path, command: list[str], session: str) -> Path:
+    """Create a per-session script so tmux does not depend on nested quoting."""
+    runs_dir = project_root / ".squad-runs"
+    runs_dir.mkdir(exist_ok=True)
+    script_path = runs_dir / f"{session}.sh"
+    script_path.write_text(
+        "\n".join(
+            [
+                "#!/bin/zsh",
+                f"cd {shlex.quote(str(project_root))}",
+                shlex.join(command),
+                "exit_code=$?",
+                "echo",
+                f"echo '[squad] Agent exited with status '$exit_code'. Session kept for capture. Kill with: ./squad kill {session}'",
+                "while true; do sleep 3600; done",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    script_path.chmod(0o755)
+    return script_path
+
+
+def normalize_agent(agent: str | None) -> str:
+    """Return a supported agent name."""
+    selected = agent or os.environ.get("SQUAD_AGENT", "codex")
+    if selected not in AGENTS:
+        raise click.ClickException(f"Unsupported agent '{selected}'. Choose: {', '.join(AGENTS)}")
+    return selected
+
+
+def generate_session_name(agent: str) -> str:
+    """Generate a fun unique session name."""
+    prefix = AGENTS[agent]["prefix"]
+    for _ in range(25):
+        adjective = secrets.choice(NAME_ADJECTIVES)
+        noun = secrets.choice(NAME_NOUNS)
+        session = f"{prefix}-{adjective}-{noun}"
+        if not session_exists(session):
+            return session
+    return f"{prefix}-{secrets.choice(NAME_ADJECTIVES)}-{secrets.choice(NAME_NOUNS)}-{uuid.uuid4().hex[:4]}"
 
 
 def session_exists(name: str) -> bool:
@@ -39,12 +141,17 @@ def session_exists(name: str) -> bool:
     return result.returncode == 0
 
 
-def get_claude_sessions() -> list[str]:
-    """Get all Claude worker sessions."""
+def get_worker_sessions(agent: str | None = None) -> list[str]:
+    """Get all worker sessions."""
     result = run_tmux("list-sessions", "-F", "#{session_name}")
     if result.returncode != 0:
         return []
-    return [s for s in result.stdout.strip().split("\n") if s.startswith("claude-")]
+    prefixes = [AGENTS[normalize_agent(agent)]["prefix"]] if agent else [a["prefix"] for a in AGENTS.values()]
+    return [
+        s
+        for s in result.stdout.strip().split("\n")
+        if any(s.startswith(f"{prefix}-") for prefix in prefixes)
+    ]
 
 
 def get_role_context(role: str) -> str | None:
@@ -68,7 +175,7 @@ def get_role_context(role: str) -> str | None:
 @click.group()
 @click.version_option(version="0.1.0")
 def cli():
-    """Claude CLI - Spawn and manage Claude workers in tmux sessions."""
+    """Squad CLI - Spawn and manage AI coding workers in tmux sessions."""
     pass
 
 
@@ -79,13 +186,23 @@ def cli():
 @click.option("--ticket", "-t", default=None, help="Ticket ID to associate with this worker")
 @click.option("--skill", "-s", multiple=True, help="Skill(s) to run after prompt (repeatable)")
 @click.option("--ralph", is_flag=True, help="Run with Ralph Loop for autonomous execution")
-def spawn(prompt: str, name: str | None, role: str | None, ticket: str | None, skill: tuple[str, ...], ralph: bool):
-    """Spawn a Claude worker in a new tmux session.
+@click.option("--agent", "-a", default=None, type=click.Choice(list(AGENTS)), help="Agent CLI to launch (default: codex or SQUAD_AGENT)")
+def spawn(
+    prompt: str,
+    name: str | None,
+    role: str | None,
+    ticket: str | None,
+    skill: tuple[str, ...],
+    ralph: bool,
+    agent: str | None,
+):
+    """Spawn a worker in a new tmux session.
 
     PROMPT is the task to give to the worker.
 
     Examples:
         spawn "Implement a fibonacci function"
+        spawn --agent codex --name fib-worker "Implement fibonacci"
         spawn --name fib-worker "Implement fibonacci"
         spawn --role worker "Fix the bug in auth.py"
         spawn --role worker --ticket abc123 "Implement feature"
@@ -93,11 +210,16 @@ def spawn(prompt: str, name: str | None, role: str | None, ticket: str | None, s
         spawn --ralph --role worker --ticket abc123 "Complex feature"
         spawn --skill bmad:dev-story "Workflow-driven task"
     """
-    # Generate session name with claude- prefix
+    agent = normalize_agent(agent)
+    prefix = AGENTS[agent]["prefix"]
+    display = AGENTS[agent]["display"]
+
+    # Generate session name with the agent prefix
     if name:
-        session = name if name.startswith("claude-") else f"claude-{name}"
+        known_prefixes = tuple(f"{config['prefix']}-" for config in AGENTS.values())
+        session = name if name.startswith(known_prefixes) else f"{prefix}-{name}"
     else:
-        session = generate_session_name()
+        session = generate_session_name(agent)
 
     # Check if session already exists
     if session_exists(session):
@@ -128,40 +250,47 @@ def spawn(prompt: str, name: str | None, role: str | None, ticket: str | None, s
                 capture_output=True,
             )
 
-    # Create tmux session with claude (skip permissions for autonomy)
+    # Create tmux session with the selected agent CLI.
     # Start in project root so ./tickets and other CLIs are accessible
-    project_root = str(Path(__file__).parent.parent)
-    result = run_tmux("new-session", "-d", "-s", session, "-c", project_root, "claude --dangerously-skip-permissions")
+    project_root_path = Path(__file__).parent.parent
+    project_root = str(project_root_path)
+    if skill and not AGENTS[agent]["interactive"]:
+        full_prompt += "\n\nRequested startup skills/workflows:\n" + "\n".join(f"- {s}" for s in skill)
+
+    command = AGENTS[agent]["command"](project_root, full_prompt)
+    run_script = create_run_script(project_root_path, command, session)
+    result = run_tmux("new-session", "-d", "-s", session, "-c", project_root, f"zsh {shlex.quote(str(run_script))}")
     if result.returncode != 0:
         click.echo(f"Error creating session: {result.stderr}", err=True)
         raise SystemExit(1)
 
-    # Wait for Claude to initialize (needs time to load)
-    click.echo(f"Starting Claude in session '{session}'...")
+    # Wait for the agent CLI to initialize.
+    click.echo(f"Starting {display} in session '{session}'...")
     time.sleep(5)
 
-    # Send the prompt (or ralph-loop command if --ralph)
-    if ralph:
-        # Use Ralph Loop for autonomous execution
-        ralph_cmd = f"/ralph-loop:ralph-loop {prompt}"
-        click.echo("Ralph Loop mode enabled")
-        run_tmux("send-keys", "-t", session, ralph_cmd, "Enter")
-    else:
-        run_tmux("send-keys", "-t", session, full_prompt, "Enter")
-        # Send extra Enter to confirm paste (workaround for Claude Code paste behavior)
-        time.sleep(1)
-        run_tmux("send-keys", "-t", session, "Enter")
-
-    # Send skills if specified (after a delay for Claude to start processing)
-    if skill:
-        click.echo(f"Skills to activate: {', '.join(skill)}")
-        time.sleep(3)  # Wait for Claude to start processing
-        for s in skill:
-            # Normalize skill name (add / prefix if missing)
-            skill_cmd = s if s.startswith("/") else f"/{s}"
-            run_tmux("send-keys", "-t", session, skill_cmd, "Enter")
-            click.echo(f"  Sent skill: {skill_cmd}")
+    if AGENTS[agent]["interactive"]:
+        # Send the prompt (or ralph-loop command if --ralph)
+        if ralph:
+            # Use Ralph Loop for autonomous execution
+            ralph_cmd = f"/ralph-loop:ralph-loop {prompt}"
+            click.echo("Ralph Loop mode enabled")
+            run_tmux("send-keys", "-t", session, ralph_cmd, "Enter")
+        else:
+            run_tmux("send-keys", "-t", session, full_prompt, "Enter")
+            # Send extra Enter to confirm paste in CLIs that ask before submitting pasted text.
             time.sleep(1)
+            run_tmux("send-keys", "-t", session, "Enter")
+
+        # Send skills if specified (after a delay for the interactive agent to start processing)
+        if skill:
+            click.echo(f"Skills to activate: {', '.join(skill)}")
+            time.sleep(3)
+            for s in skill:
+                # Normalize skill name (add / prefix if missing)
+                skill_cmd = s if s.startswith("/") else f"/{s}"
+                run_tmux("send-keys", "-t", session, skill_cmd, "Enter")
+                click.echo(f"  Sent skill: {skill_cmd}")
+                time.sleep(1)
 
     click.echo(f"Spawned worker: {session}")
     click.echo(f"Attach with: tmux attach -t {session}")
@@ -198,13 +327,14 @@ def capture(session: str, lines: int):
 
 
 @cli.command("list")
-def list_sessions():
-    """List all active Claude worker sessions.
+@click.option("--agent", "-a", default=None, type=click.Choice(list(AGENTS)), help="Filter by agent")
+def list_sessions(agent: str | None):
+    """List all active worker sessions.
 
     Shows session name and basic info for all sessions
-    starting with 'claude-'.
+    starting with a known agent prefix.
     """
-    sessions = get_claude_sessions()
+    sessions = get_worker_sessions(agent)
 
     if not sessions:
         click.echo("No active workers")
@@ -251,21 +381,21 @@ def kill(session: str):
 @cli.command("kill-all")
 @click.option("--force", "-f", is_flag=True, help="Skip confirmation prompt")
 def kill_all(force: bool):
-    """Kill all Claude worker sessions.
+    """Kill all worker sessions.
 
-    Kills all tmux sessions starting with 'claude-'.
+    Kills all tmux sessions using known worker prefixes.
 
     Examples:
         kill-all
         kill-all --force
     """
-    sessions = get_claude_sessions()
+    sessions = get_worker_sessions()
 
     if not sessions:
-        click.echo("No Claude sessions to kill")
+        click.echo("No worker sessions to kill")
         return
 
-    click.echo(f"Found {len(sessions)} Claude session(s):")
+    click.echo(f"Found {len(sessions)} worker session(s):")
     for session in sessions:
         click.echo(f"  - {session}")
 
@@ -291,10 +421,10 @@ def kill_all(force: bool):
 def send(session: str, text: str):
     """Send text to a worker session (advanced).
 
-    Useful for sending commands like /exit to workers.
+    Useful for sending follow-up text to workers.
 
     Examples:
-        send my-worker "/exit"
+        send my-worker "please summarize your current status"
         send my-worker "continue with the next step"
     """
     if not session_exists(session):

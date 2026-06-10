@@ -1,6 +1,6 @@
 # tickets-cli
 
-CLI for tracking tasks delegated to Claude workers.
+CLI for tracking tasks delegated to workers.
 
 ## Installation
 
@@ -12,7 +12,7 @@ uv sync
 ## Concept
 
 ```
-Prophet Claude                          Worker Claude
+Prophet Codex                          Worker Codex
       │                                       │
       ├─► tickets create "JWT Auth"           │
       │   └─► Ticket #abc123 created          │
@@ -175,7 +175,7 @@ Ticket format:
 }
 ```
 
-## Integration with claude-cli
+## Integration with codex-cli
 
 Typical workflow:
 
@@ -185,7 +185,7 @@ Typical workflow:
 
 # 2. Prophet assigns and spawns the worker
 ./tickets assign abc123 feature-worker
-./claude spawn --name feature-worker --role worker "Implement feature X"
+./squad spawn --name feature-worker --role worker "Implement feature X"
 
 # 3. Prophet checks the status
 ./tickets list

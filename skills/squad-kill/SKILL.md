@@ -1,37 +1,37 @@
 ---
-name: mcbs-kill
+name: squad-kill
 description: Kill Workers
 allowed-tools: Bash
 ---
 
 # Kill Workers
 
-Terminates one or more Claude workers.
+Terminates one or more workers.
 
 ## Commands
 
 ### Kill a specific worker
 ```bash
-./claude kill <worker-name>
+./squad kill <worker-name>
 ```
 
 ### Kill all workers
 ```bash
-./claude kill-all
+./squad kill-all
 # Skip confirmation:
-./claude kill-all --force
+./squad kill-all --force
 ```
 
 ## Before Killing
 
 1. Check active workers:
    ```bash
-   ./claude list
+   ./squad list
    ```
 
 2. Capture output if needed:
    ```bash
-   ./claude capture <worker-name> --lines 1000
+   ./squad capture <worker-name> --lines 1000
    ```
 
 3. Update ticket if applicable:
@@ -49,5 +49,5 @@ Terminates one or more Claude workers.
 ## Notes
 
 - `kill` does not delete associated tickets
-- Workers normally terminate with `/exit`
-- `kill-all` does NOT kill `prophet-claude`
+- Workers should clearly report completion; the orchestrator can then kill the tmux session if it remains open
+- `kill-all` does NOT kill `prophet-codex`

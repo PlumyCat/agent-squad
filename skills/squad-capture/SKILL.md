@@ -1,35 +1,35 @@
 ---
-name: mcbs-capture
+name: squad-capture
 description: Capture Worker Output
 allowed-tools: Bash
 ---
 
 # Capture Worker Output
 
-Captures and displays output from a Claude worker.
+Captures and displays output from a worker.
 
 ## Commands
 
 ### Capture last lines (default: 50)
 ```bash
-./claude capture <worker-name>
+./squad capture <worker-name>
 ```
 
 ### Capture more lines
 ```bash
-./claude capture <worker-name> --lines 100
+./squad capture <worker-name> --lines 100
 ```
 
 ### Capture entire buffer
 ```bash
-./claude capture <worker-name> --lines 5000
+./squad capture <worker-name> --lines 5000
 ```
 
 ## Before Capturing
 
 Verify the worker exists:
 ```bash
-./claude list
+./squad list
 ```
 
 ## Interpretation
@@ -38,7 +38,7 @@ Look for in the output:
 - **Errors**: Error messages or exceptions
 - **Progress**: Progress indicators
 - **Completion**: Task completion messages
-- **/exit**: Worker terminated properly
+- **Completion report**: Worker has finished and is ready for cleanup
 
 ## Next Actions
 

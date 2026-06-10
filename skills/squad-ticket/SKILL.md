@@ -1,5 +1,5 @@
 ---
-name: mcbs-ticket
+name: squad-ticket
 description: Ticket Management
 allowed-tools: Bash
 ---

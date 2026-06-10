@@ -34,5 +34,8 @@ tutorial.md
 # Tickets storage (runtime)
 tickets-cli/tickets/
 
+# Squad runtime scripts
+.squad-runs/
+
 # Generated settings
 settings.json

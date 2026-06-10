@@ -1,0 +1,5 @@
+#!/bin/bash
+# Wrapper for the Squad worker manager
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/claude-cli"
+exec uv run python main.py "$@"

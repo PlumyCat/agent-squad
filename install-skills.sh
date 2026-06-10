@@ -1,14 +1,14 @@
 #!/bin/bash
-# Install MCBS skills to global Claude Code skills directory
+# Install Squad skills to global Codex skills directory
 # Usage: ./install-skills.sh
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-SKILLS_SRC="$SCRIPT_DIR/skills/mcbs"
-SKILLS_DST="$HOME/.claude/skills/mcbs"
+SKILLS_SRC="$SCRIPT_DIR/skills"
+SKILLS_DST="${CODEX_HOME:-$HOME/.codex}/skills"
 
-echo "=== MCBS Skills Installation ==="
+echo "=== Squad Skills Installation for Codex ==="
 echo ""
 
 # Check source exists
@@ -22,18 +22,23 @@ mkdir -p "$SKILLS_DST"
 
 # Copy skills
 echo "Installing skills to $SKILLS_DST..."
-cp -r "$SKILLS_SRC"/* "$SKILLS_DST/"
-
-echo ""
-echo "=== Installed Skills ==="
-ls -1 "$SKILLS_DST" | while read skill; do
-    echo "  /mcbs:$skill"
+for skill_dir in "$SKILLS_SRC"/squad-*; do
+    [ -d "$skill_dir" ] || continue
+    skill_name="$(basename "$skill_dir")"
+    rm -rf "$SKILLS_DST/$skill_name"
+    cp -R "$skill_dir" "$SKILLS_DST/$skill_name"
 done
 
 echo ""
-echo "Done! Skills are now available globally."
+echo "=== Installed Skills ==="
+find "$SKILLS_SRC" -maxdepth 1 -type d -name 'squad-*' -exec basename {} \; | sort | while read skill; do
+    echo "  $skill"
+done
+
+echo ""
+echo "Done! Skills are now available globally in Codex."
 echo ""
 echo "Usage examples:"
-echo "  /mcbs:status   - System status"
-echo "  /mcbs:spawn    - Spawn a worker"
-echo "  /mcbs:workers  - List workers"
+echo "  squad-status   - System status"
+echo "  squad-spawn    - Spawn a worker"
+echo "  squad-workers  - List workers"

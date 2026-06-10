@@ -1,18 +1,18 @@
 ---
-name: mcbs-workers
+name: squad-workers
 description: Workers Management
 allowed-tools: Bash
 ---
 
 # Workers Management
 
-Lists and manages active Claude workers.
+Lists and manages active workers.
 
 ## Commands
 
 ### List active workers
 ```bash
-./claude list
+./squad list
 ```
 
 ### View all tmux sessions
@@ -29,12 +29,12 @@ For each worker, display:
 
 ## Quick Actions
 
-1. Capture output: `/capture <name>`
-2. Kill a worker: `/kill <name>`
-3. Kill all: `./claude kill-all`
-4. New worker: `/spawn`
+1. Capture output: `/squad:capture <name>`
+2. Kill a worker: `/squad:kill <name>`
+3. Kill all: `./squad kill-all`
+4. New worker: `/squad:spawn`
 
 ## Notes
 
-- Claude sessions prefixed with `claude-` unless explicitly named
-- Prophet Claude: `prophet-claude` session
+- Codex sessions prefixed with `codex-` unless explicitly named
+- Prophet Codex: `prophet-codex` session

@@ -1,23 +1,23 @@
 ---
-name: mcbs-status
+name: squad-status
 description: System Status
 allowed-tools: Bash
 ---
 
 # System Status
 
-Overview of the Multi-Claude Bootstrap system.
+Overview of the Codex Squad system.
 
 ## Commands to Execute
 
-### 1. Prophet Claude Status
+### 1. Prophet Codex Status
 ```bash
-tmux has-session -t prophet-claude 2>/dev/null && echo "Prophet Claude: RUNNING" || echo "Prophet Claude: STOPPED"
+tmux has-session -t prophet-codex 2>/dev/null && echo "Prophet Codex: RUNNING" || echo "Prophet Codex: STOPPED"
 ```
 
 ### 2. Active Workers
 ```bash
-./claude list
+./squad list
 ```
 
 ### 3. In-Progress Tickets
@@ -52,16 +52,16 @@ done 2>/dev/null
 ## Output Format
 
 ```
-=== Multi-Claude System Status ===
+=== Multi-Codex System Status ===
 
-Prophet Claude: [RUNNING/STOPPED]
+Prophet Codex: [RUNNING/STOPPED]
 
 Active workers: X
-  - worker-1 (running)
-  - worker-2 (running)
+  - codex-neon-spark (running)
+  - codex-solar-forge (running)
 
 Workers waiting: X
-  ⏳ claude-auth: "OAuth or JWT?" (ticket abc123)
+  ⏳ codex-auth: "OAuth or JWT?" (ticket abc123)
 
 Tickets:
   ○ Open: X
@@ -75,7 +75,7 @@ Tmux sessions: X total
 
 ## Recommended Actions
 
-- Prophet STOPPED → `/prophet`
+- Prophet STOPPED → `/squad:prophet`
 - Tickets BLOCKED → Investigate
-- Tickets WAITING → `/mcbs:respond <session> "response"`
-- No workers but tickets in-progress → Check `/capture`
+- Tickets WAITING → `/squad:respond <session> "response"`
+- No workers but tickets in-progress → Check `/squad:capture`

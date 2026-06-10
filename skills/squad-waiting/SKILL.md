@@ -1,17 +1,17 @@
 ---
-name: mcbs-waiting
+name: squad-waiting
 description: Signal that worker is waiting for Prophet response
 allowed-tools: Bash, Read, Write
 ---
 
 # Waiting - Waiting for Prophet Response
 
-This skill allows a worker to signal that it needs a response from Prophet Claude before continuing.
+This skill allows a worker to signal that it needs a response from Prophet Codex before continuing.
 
 ## Usage
 
 ```
-/mcbs:waiting "Your question for Prophet"
+/squad:waiting "Your question for Prophet"
 ```
 
 ## Parameters
@@ -89,7 +89,7 @@ Once the response is received:
 
 ```json
 {
-  "session": "claude-auth",
+  "session": "codex-auth",
   "ticket_id": "abc123",
   "timestamp": "2026-01-29T14:30:00Z",
   "message": "OAuth or JWT for authentication?",
@@ -101,7 +101,7 @@ Once the response is received:
 
 ```json
 {
-  "session": "claude-auth",
+  "session": "codex-auth",
   "ticket_id": "abc123",
   "timestamp": "2026-01-29T14:35:00Z",
   "response": "Use OAuth2 with refresh tokens",
@@ -115,7 +115,7 @@ Once the response is received:
 Worker has a question
        │
        ▼
-  /mcbs:waiting "OAuth or JWT?"
+  /squad:waiting "OAuth or JWT?"
        │
        ├─► tickets update → waiting
        ├─► Write signals/waiting/<session>.json
@@ -124,10 +124,10 @@ Worker has a question
   Worker waits (poll responses/)
        │
        ▼
-  Prophet sees via /mcbs:status
+  Prophet sees via /squad:status
        │
        ▼
-  Prophet responds via /mcbs:respond
+  Prophet responds via /squad:respond
        │
        ▼
   Worker reads the response
@@ -138,7 +138,7 @@ Worker has a question
 
 ## Important Notes
 
-- **DO NOT** do `/exit` while waiting
+- **DO NOT** end the session while waiting
 - **DO NOT** continue with assumptions - wait for the response
 - If blocked too long, set ticket to `blocked` instead of `waiting`
-- Prophet will be notified via `/mcbs:status` of waiting workers
+- Prophet will be notified via `/squad:status` of waiting workers

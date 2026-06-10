@@ -1,11 +1,11 @@
-# claude-cli
+# codex-cli
 
-CLI for spawning and managing Claude workers in tmux sessions.
+CLI for spawning and managing workers in tmux sessions.
 
 ## Installation
 
 ```bash
-cd claude-cli
+cd codex-cli
 uv sync
 ```
 
@@ -13,7 +13,7 @@ uv sync
 
 ### spawn
 
-Creates a new Claude worker in a tmux session.
+Creates a new worker in a tmux session.
 
 ```bash
 # Basic spawn (auto-generated name)
@@ -56,7 +56,7 @@ uv run python main.py kill my-worker
 
 ### kill-all
 
-Terminates all Claude workers.
+Terminates all workers.
 
 ```bash
 # With confirmation
@@ -96,6 +96,6 @@ uv run python main.py kill auth-impl
 
 ## Notes
 
-- Sessions are prefixed with `claude-`
+- Sessions are prefixed with `codex-`
 - Use `capture` rather than `tmux attach` to monitor
 - Workers can auto-terminate with `/exit`

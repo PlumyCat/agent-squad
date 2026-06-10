@@ -1,6 +1,6 @@
-# Multi-Claude Bootstrap System - Usage Guide
+# Codex Squad - Usage Guide
 
-> Complete documentation for the multi-agent Claude orchestration system
+> Complete documentation for the multi-agent Codex orchestration system
 
 ## Table of Contents
 
@@ -18,9 +18,9 @@
 
 ## Overview
 
-### What is the Multi-Claude Bootstrap?
+### What is Codex Squad?
 
-A system for orchestrating **multiple Claude instances** working in parallel. A main Claude ("Prophet Claude") delegates tasks to isolated workers in tmux sessions.
+A system for orchestrating **multiple Codex instances** working in parallel. A main Codex ("Prophet Codex") delegates tasks to isolated workers in tmux sessions.
 
 ### Why use this system?
 
@@ -58,7 +58,7 @@ A system for orchestrating **multiple Claude instances** working in parallel. A 
 │  │  • Delegates to workers                                 │    │
 │  │  • Supervises and integrates                            │    │
 │  │                                                         │    │
-│  │  Tools: claude-cli, context-cli, tickets-cli            │    │
+│  │  Tools: codex-cli, context-cli, tickets-cli            │    │
 │  └─────────────────────────────────────────────────────────┘    │
 │                           │                                     │
 │            ┌──────────────┼──────────────┐                      │
@@ -83,7 +83,7 @@ A system for orchestrating **multiple Claude instances** working in parallel. A 
 ```
 bootstrap/
 │
-├── claude-cli/          # Tmux worker management
+├── codex-cli/          # Tmux worker management
 │   ├── spawn            # Create a worker
 │   ├── capture          # View output
 │   ├── list             # List workers
@@ -102,7 +102,7 @@ bootstrap/
 │   └── update           # Change status
 │
 └── scripts/
-    └── restart-prophet-claude.sh
+    └── restart-prophet-codex.sh
 ```
 
 ### Data Flow
@@ -118,7 +118,7 @@ bootstrap/
                            │ generates context
                            ▼
 ┌─────────────────┐     ┌─────────────┐     ┌─────────────┐
-│ tickets-cli │◄────│ claude-cli  │────►│    tmux     │
+│ tickets-cli │◄────│ codex-cli  │────►│    tmux     │
 │             │     │             │     │             │
 │ • tracking  │     │ • spawn     │     │ • sessions  │
 │ • states    │     │ • capture   │     │ • isolation │
@@ -143,9 +143,9 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 sudo apt install tmux  # Ubuntu/Debian
 brew install tmux      # macOS
 
-# Claude Code CLI
+# Codex CLI
 # Must be installed and configured with an active account
-claude --version
+codex --version
 ```
 
 ### System Installation
@@ -155,7 +155,7 @@ claude --version
 mkdir -p ~/workspace/bootstrap
 cd ~/workspace/bootstrap
 
-# Initialize claude-cli
+# Initialize worker manager CLI
 mkdir claude-cli && cd claude-cli
 uv init
 uv add click
@@ -175,41 +175,41 @@ uv add click
 
 # Create wrapper scripts
 cd ..
-# ... create claude, context, tickets scripts
-chmod +x claude context tickets restart-prophet-claude.sh
+# ... create squad, context, tickets scripts
+chmod +x squad context tickets restart-prophet-codex.sh
 ```
 
 ---
 
 ## Quick Start
 
-### 1. Start Prophet Claude
+### 1. Start Prophet Codex
 
 ```bash
 cd ~/workspace/bootstrap
-./restart-prophet-claude.sh
+./restart-prophet-codex.sh
 
 # Or manually:
-tmux new-session -d -s prophet-claude "claude"
-tmux attach -t prophet-claude
+tmux new-session -d -s prophet-codex "codex --no-alt-screen"
+tmux attach -t prophet-codex
 ```
 
 ### 2. Delegate your first task
 
-In Prophet Claude:
+In Prophet Codex:
 
 ```bash
 # Spawn a worker
-./claude spawn --name hello-worker "Say 'Hello World' and then exit with /exit"
+./squad spawn --name hello-worker "Say 'Hello World', report completion, then stop"
 
 # Check that it's running
-./claude list
+./squad list
 
 # View its output
-./claude capture hello-worker
+./squad capture hello-worker
 
 # Clean up
-./claude kill hello-worker
+./squad kill hello-worker
 ```
 
 ### 3. Use roles
@@ -219,7 +219,7 @@ In Prophet Claude:
 ./context list-roles
 
 # Spawn with a role
-./claude spawn --role worker --name code-worker "Implement a fibonacci function in Python"
+./squad spawn --role worker --name code-worker "Implement a fibonacci function in Python"
 
 # The worker receives the "worker" role context
 ```
@@ -228,15 +228,15 @@ In Prophet Claude:
 
 ## Key Concepts
 
-### Prophet Claude vs Workers
+### Prophet Codex vs Workers
 
-| Aspect | Prophet Claude | Worker Claude |
+| Aspect | Prophet Codex | Worker Codex |
 |--------|----------------|---------------|
 | **Role** | Orchestrator | Executor |
 | **Lifespan** | Permanent | Temporary |
 | **Context** | Complete (system) | Specialized (task) |
 | **Actions** | Delegate, supervise | Implement, report |
-| **Tmux session** | `prophet-claude` | `claude-XXXXXXXX` |
+| **Tmux session** | `prophet-codex` | `codex-neon-spark` |
 
 ### Tmux Sessions
 
@@ -245,15 +245,15 @@ In Prophet Claude:
 │ tmux server                                         │
 │                                                     │
 │  ┌─────────────────────┐  ┌─────────────────────┐   │
-│  │ prophet-claude      │  │ claude-abc12345     │   │
+│  │ prophet-codex      │  │ codex-abc12345     │   │
 │  │ (attached)          │  │ (detached)          │   │
 │  │                     │  │                     │   │
-│  │ Human ◄──► Claude   │  │ Worker Claude       │   │
+│  │ Human ◄──► Codex   │  │ Worker Codex       │   │
 │  │                     │  │ (autonomous)        │   │
 │  └─────────────────────┘  └─────────────────────┘   │
 │                                                     │
 │  ┌─────────────────────┐  ┌─────────────────────┐   │
-│  │ claude-def67890     │  │ claude-ghi11111     │   │
+│  │ codex-def67890     │  │ codex-ghi11111     │   │
 │  │ (detached)          │  │ (detached)          │   │
 │  └─────────────────────┘  └─────────────────────┘   │
 │                                                     │
@@ -268,12 +268,12 @@ roles/worker.yaml:
   name: worker
   description: "Worker for delegated tasks"
   prompt: |
-    You are a Worker Claude. Complete the task and exit.
+    You are a Worker Codex. Complete the task, report completion, and stop.
 
     CONSTRAINTS:
     - Focus on the given task
     - Don't start new tasks
-    - Exit with /exit when done
+    - Report completion and stop when done
 
   directives:
     - base           # Includes directives/base.yaml
@@ -320,21 +320,21 @@ directives/code-quality.yaml:
 │  1. Human requests a complex task                       │
 │     │                                                   │
 │     ▼                                                   │
-│  2. Prophet Claude analyzes and decomposes              │
+│  2. Prophet Codex analyzes and decomposes              │
 │     │                                                   │
 │     ├─────────────────────────────────────────┐         │
 │     ▼                                         ▼         │
-│  3. ./claude spawn "Sub-task 1"    ./claude spawn "Sub-task 2"
+│  3. ./squad spawn "Sub-task 1"    ./squad spawn "Sub-task 2"
 │     │                                         │         │
 │     ▼                                         ▼         │
 │  4. Worker 1 executes              Worker 2 executes    │
 │     │                                         │         │
 │     ▼                                         ▼         │
-│  5. ./claude capture worker1    ./claude capture worker2│
+│  5. ./squad capture worker1    ./squad capture worker2│
 │     │                                         │         │
 │     └─────────────────┬───────────────────────┘         │
 │                       ▼                                 │
-│  6. Prophet Claude integrates results                   │
+│  6. Prophet Codex integrates results                   │
 │     │                                                   │
 │     ▼                                                   │
 │  7. Human receives complete deliverable                 │
@@ -345,17 +345,17 @@ directives/code-quality.yaml:
 ### Advanced Workflow: With Tickets
 
 ```bash
-# Prophet Claude receives: "Add JWT authentication"
+# Prophet Codex receives: "Add JWT authentication"
 
 # 1. Create the ticket
 ./tickets create "Implement JWT Auth" --body "Backend + Frontend"
 
 # 2. Spawn and assign
-./claude spawn --role worker --name auth-backend "Implement JWT backend"
+./squad spawn --role worker --name auth-backend "Implement JWT backend"
 ./tickets assign <ticket-id> auth-backend
 
 # 3. Supervise
-./claude capture auth-backend --lines 50
+./squad capture auth-backend --lines 50
 ./tickets show <ticket-id>
 
 # 4. When complete
@@ -369,29 +369,29 @@ directives/code-quality.yaml:
 # context-cli/roles/code-reviewer.yaml
 
 # Spawn the reviewer
-./claude spawn --role code-reviewer --name reviewer-pr123 \
+./squad spawn --role code-reviewer --name reviewer-pr123 \
   "Review the changes in src/auth.py for security issues"
 
 # Capture the report
-./claude capture reviewer-pr123 > review-report.md
+./squad capture reviewer-pr123 > review-report.md
 ```
 
 ---
 
 ## Command Reference
 
-### claude-cli
+### codex-cli
 
 | Command | Description | Example |
 |---------|-------------|---------|
-| `spawn` | Create a worker | `./claude spawn "task"` |
-| `spawn --name` | Named worker | `./claude spawn --name my-worker "task"` |
-| `spawn --role` | With a role | `./claude spawn --role worker "task"` |
-| `capture` | View output | `./claude capture my-worker` |
-| `capture --lines` | Last N lines | `./claude capture my-worker --lines 100` |
-| `list` | List workers | `./claude list` |
-| `kill` | Kill a worker | `./claude kill my-worker` |
-| `kill-all` | Kill all | `./claude kill-all --force` |
+| `spawn` | Create a worker | `./squad spawn "task"` |
+| `spawn --name` | Named worker | `./squad spawn --name my-worker "task"` |
+| `spawn --role` | With a role | `./squad spawn --role worker "task"` |
+| `capture` | View output | `./squad capture my-worker` |
+| `capture --lines` | Last N lines | `./squad capture my-worker --lines 100` |
+| `list` | List workers | `./squad list` |
+| `kill` | Kill a worker | `./squad kill my-worker` |
+| `kill-all` | Kill all | `./squad kill-all --force` |
 
 ### context-cli
 
@@ -400,7 +400,7 @@ directives/code-quality.yaml:
 | `show` | Display context | `./context show worker` |
 | `list-roles` | List roles | `./context list-roles` |
 | `list-directives` | List directives | `./context list-directives` |
-| `settings` | Generate settings.json | `./context settings prophet-claude` |
+| `settings` | Generate settings.json | `./context settings prophet-codex` |
 
 ### tickets-cli
 
@@ -423,7 +423,7 @@ directives/code-quality.yaml:
 
 ## Best Practices
 
-### For Prophet Claude
+### For Prophet Codex
 
 ```
 ✅ DO:
@@ -444,7 +444,7 @@ directives/code-quality.yaml:
 ```
 ✅ DO:
 - Focus on the assigned task
-- Exit with /exit when done
+- Report completion and stop when done
 - Report blockers clearly
 
 ❌ DON'T:
@@ -464,7 +464,7 @@ Good:
 Bad:
 - worker1
 - test
-- claude-session
+- codex-session
 ```
 
 ---
@@ -479,13 +479,13 @@ tmux list-sessions
 
 # The worker may have finished (auto-exit)
 # Relaunch if needed
-./claude spawn --name <name> "task"
+./squad spawn --name <name> "task"
 ```
 
 ### "No active workers"
 
 ```bash
-# Normal if all have finished with /exit
+# Normal if all have finished
 # Check tmux history
 tmux list-sessions -a
 ```
@@ -494,11 +494,11 @@ tmux list-sessions -a
 
 ```bash
 # Capture to see the state
-./claude capture <worker> --lines 100
+./squad capture <worker> --lines 100
 
 # If really stuck, kill and respawn
-./claude kill <worker>
-./claude spawn --name <worker> "corrected task"
+./squad kill <worker>
+./squad spawn --name <worker> "corrected task"
 ```
 
 ### Context not applied
@@ -539,40 +539,40 @@ tmux send-keys -t <session> "command" Enter
 ### Complete Session Example
 
 ```bash
-# Terminal 1: Prophet Claude
-./restart-prophet-claude.sh
-tmux attach -t prophet-claude
+# Terminal 1: Prophet Codex
+./restart-prophet-codex.sh
+tmux attach -t prophet-codex
 
-# In Prophet Claude:
+# In Prophet Codex:
 > Implement a Redis cache system for the API
 
 # Prophet responds and delegates:
-./claude spawn --role worker --name cache-impl \
+./squad spawn --role worker --name cache-impl \
   "Implement Redis caching in src/api/cache.py:
    - Connection pool
    - get/set methods
    - TTL support
    - Error handling"
 
-./claude spawn --role worker --name cache-tests \
+./squad spawn --role worker --name cache-tests \
   "Write tests for Redis cache in tests/test_cache.py"
 
 # Prophet checks:
-./claude list
+./squad list
 # cache-impl (running)
 # cache-tests (running)
 
-./claude capture cache-impl --lines 30
+./squad capture cache-impl --lines 30
 # ... see progress ...
 
 # When done:
-./claude capture cache-impl > /tmp/cache-impl-result.md
-./claude capture cache-tests > /tmp/cache-tests-result.md
+./squad capture cache-impl > /tmp/cache-impl-result.md
+./squad capture cache-tests > /tmp/cache-tests-result.md
 
 # Integrate and continue
 ```
 
 ---
 
-*Documentation generated from the Multi-Claude Bootstrap tutorial by @claudecodeonly*
+*Documentation generated from the Multi-Codex Bootstrap tutorial by @claudecodeonly*
 *Last updated: 2025-01-28*
