@@ -1,0 +1,245 @@
+/* ========================================================================
+   Bot Front — Design Tokens (v2 — Official Be-Cloud brand)
+   JAUNE #fcb214 / ORANGE #f15e30 / VIOLET #5050a2
+   Primary = Violet. Orange = accent chaleureux. Jaune = highlight / warning.
+   Dark + Light themes. M3 token naming.
+   ========================================================================= */
+
+/* ── Brand raw palette (use via semantic tokens, not directly) ─────────── */
+:root {
+  --brand-jaune:       #fcb214;
+  --brand-jaune-soft:  #ffd26e;
+  --brand-jaune-deep:  #c88900;
+
+  --brand-orange:      #f15e30;
+  --brand-orange-soft: #ff8b67;
+  --brand-orange-deep: #c6441d;
+
+  --brand-violet:      #5050a2;
+  --brand-violet-soft: #7a7ac4;
+  --brand-violet-deep: #363672;
+
+  /* Font stacks (Google Fonts CDN, loaded by host HTML) */
+  --font-headline: "Space Grotesk", system-ui, sans-serif;
+  --font-body:     "Manrope",       system-ui, sans-serif;
+  --font-label:    "Inter",         system-ui, sans-serif;
+  --font-mono:     ui-monospace, SFMono-Regular, Menlo, "Cascadia Mono", monospace;
+  --font-icon:     "Material Symbols Outlined";
+
+  /* Type scale */
+  --fs-h1:      2.25rem;
+  --fs-h1-chat: 1.875rem;
+  --fs-h2:      1.5rem;
+  --fs-h3:      1.125rem;
+  --fs-body:    0.875rem;
+  --fs-sm:      0.8125rem;
+  --fs-xs:      0.75rem;
+  --fs-2xs:     0.625rem;
+  --fs-3xs:     0.5625rem;
+
+  /* Radii */
+  --radius-xs:   4px;
+  --radius-sm:   6px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-2xl:  24px;
+  --radius-pill: 9999px;
+
+  /* Spacing */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px;
+
+  /* Motion */
+  --ease-default: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-out:     cubic-bezier(0.2, 0, 0, 1);
+  --dur-fast: 0.15s; --dur-base: 0.22s; --dur-slow: 0.3s; --dur-pulse: 0.7s;
+}
+
+/* ── DARK theme (default) ──────────────────────────────────────────────── */
+:root,
+html.dark {
+  /* Surfaces (M3 elevation scale — violet-tinted near-blacks) */
+  --surface:                    #131218;
+  --surface-container-lowest:   #0c0b11;
+  --surface-container-low:      #1a1921;
+  --surface-container:          #1e1d26;
+  --surface-container-high:     #28262f;
+  --surface-container-highest:  #33313a;
+  --surface-bright:             #3a383f;
+  --surface-variant:            #33313a;
+  --surface-tint:               var(--brand-violet);
+
+  /* Content */
+  --on-background:         #e8e5ef;
+  --on-surface:            #e8e5ef;
+  --on-surface-variant:    #c0bcc9;
+  --outline:               #89859a;
+  --outline-variant:       #46424f;
+  --inverse-surface:       #e8e5ef;
+
+  /* Primary = violet */
+  --primary:               #8686d4;          /* lifted violet, AA on dark */
+  --primary-container:     var(--brand-violet);
+  --on-primary:            #17173a;
+  --primary-soft-bg:       rgba(134, 134, 212, 0.12);
+  --primary-soft-border:   rgba(134, 134, 212, 0.30);
+
+  /* Secondary = orange (chaleureux) */
+  --secondary:             #ff8b67;
+  --secondary-container:   var(--brand-orange-deep);
+  --on-secondary:          #3a1609;
+  --on-secondary-container: #ffcdba;
+  --secondary-soft-bg:     rgba(255, 139, 103, 0.12);
+  --secondary-soft-border: rgba(255, 139, 103, 0.30);
+
+  /* Tertiary = jaune (highlight / attention) */
+  --tertiary:              var(--brand-jaune);
+  --tertiary-container:    var(--brand-jaune-deep);
+  --on-tertiary:           #2a1d00;
+  --tertiary-soft-bg:      rgba(252, 178, 20, 0.12);
+  --tertiary-soft-border:  rgba(252, 178, 20, 0.35);
+
+  /* Semantic (status) */
+  --success:               #7dd3a4;
+  --success-container:     #0f4a2e;
+  --on-success:            #002914;
+
+  --warn:                  var(--brand-jaune);      /* jaune = warn */
+  --warn-container:        var(--brand-jaune-deep);
+  --on-warn:               #2a1d00;
+
+  --danger:                #ffb4ab;
+  --danger-container:      #93000a;
+  --on-danger:             #690005;
+
+  --info:                  var(--primary);
+
+  /* Semantic aliases */
+  --fg-1:       var(--on-background);
+  --fg-2:       var(--on-surface-variant);
+  --fg-3:       #89859a;
+  --fg-4:       #6b6778;
+  --fg-muted:   #4f4c59;
+  --accent:     var(--primary);
+
+  /* Borders (alpha-blended) */
+  --border-hairline: rgba(70, 66, 79, 0.10);
+  --border-subtle:   rgba(70, 66, 79, 0.20);
+  --border-accent:   rgba(134, 134, 212, 0.30);
+
+  /* Shadows */
+  --shadow-sm:        0 1px 2px rgba(0,0,0,0.40);
+  --shadow-md:        0 4px 6px -1px rgba(0,0,0,0.45), 0 2px 4px -2px rgba(0,0,0,0.40);
+  --shadow-lg:        0 10px 15px -3px rgba(0,0,0,0.55), 0 4px 6px -4px rgba(0,0,0,0.45);
+  --shadow-xl:        0 20px 25px -5px rgba(0,0,0,0.60), 0 8px 10px -6px rgba(0,0,0,0.45);
+  --shadow-2xl:       0 25px 50px -12px rgba(0,0,0,0.75);
+  --shadow-cta:       0 10px 20px -5px rgba(80, 80, 162, 0.35);
+  --shadow-cta-hover: 0 14px 30px -8px rgba(80, 80, 162, 0.55);
+
+  /* Chat bubbles */
+  --bubble-bot-bg:      var(--surface-container-high);
+  --bubble-user-bg:     var(--primary-soft-bg);
+  --bubble-user-border: var(--primary-soft-border);
+}
+
+/* ── LIGHT theme ───────────────────────────────────────────────────────── */
+html.light {
+  --surface:                    #fbfaff;
+  --surface-container-lowest:   #ffffff;
+  --surface-container-low:      #f5f3fb;
+  --surface-container:          #efedf6;
+  --surface-container-high:     #e8e5f0;
+  --surface-container-highest:  #dcd8e7;
+  --surface-bright:             #ffffff;
+  --surface-variant:            #e8e5f0;
+  --surface-tint:               var(--brand-violet);
+
+  --on-background:         #1a1823;
+  --on-surface:            #1a1823;
+  --on-surface-variant:    #4a4658;
+  --outline:               #7a7688;
+  --outline-variant:       #cac6d4;
+  --inverse-surface:       #1a1823;
+
+  --primary:               var(--brand-violet);
+  --primary-container:     #e6e5f5;
+  --on-primary:            #ffffff;
+  --primary-soft-bg:       rgba(80, 80, 162, 0.08);
+  --primary-soft-border:   rgba(80, 80, 162, 0.25);
+
+  --secondary:             var(--brand-orange);
+  --secondary-container:   #fde0d6;
+  --on-secondary:          #ffffff;
+  --on-secondary-container: #7a2a14;
+  --secondary-soft-bg:     rgba(241, 94, 48, 0.08);
+  --secondary-soft-border: rgba(241, 94, 48, 0.25);
+
+  --tertiary:              var(--brand-jaune-deep);
+  --tertiary-container:    #ffeab5;
+  --on-tertiary:           #2a1d00;
+  --tertiary-soft-bg:      rgba(252, 178, 20, 0.14);
+  --tertiary-soft-border:  rgba(200, 137, 0, 0.35);
+
+  --success:               #0f7a48;
+  --success-container:     #cef1dc;
+  --on-success:            #ffffff;
+
+  --warn:                  var(--brand-jaune-deep);
+  --warn-container:        #ffeab5;
+  --on-warn:               #2a1d00;
+
+  --danger:                #ba1a1a;
+  --danger-container:      #ffdad6;
+  --on-danger:             #ffffff;
+
+  --info:                  var(--primary);
+
+  --fg-1:     var(--on-background);
+  --fg-2:     var(--on-surface-variant);
+  --fg-3:     #7a7688;
+  --fg-4:     #9592a0;
+  --fg-muted: #b2aebd;
+  --accent:   var(--primary);
+
+  --border-hairline: rgba(80, 80, 162, 0.08);
+  --border-subtle:   rgba(80, 80, 162, 0.16);
+  --border-accent:   rgba(80, 80, 162, 0.30);
+
+  --shadow-sm:        0 1px 2px rgba(26, 24, 35, 0.06);
+  --shadow-md:        0 4px 6px -1px rgba(26, 24, 35, 0.08), 0 2px 4px -2px rgba(26, 24, 35, 0.06);
+  --shadow-lg:        0 10px 15px -3px rgba(26, 24, 35, 0.10), 0 4px 6px -4px rgba(26, 24, 35, 0.06);
+  --shadow-xl:        0 20px 25px -5px rgba(26, 24, 35, 0.12), 0 8px 10px -6px rgba(26, 24, 35, 0.06);
+  --shadow-2xl:       0 25px 50px -12px rgba(26, 24, 35, 0.18);
+  --shadow-cta:       0 10px 20px -5px rgba(80, 80, 162, 0.22);
+  --shadow-cta-hover: 0 14px 30px -8px rgba(80, 80, 162, 0.40);
+
+  --bubble-bot-bg:      var(--surface-container-high);
+  --bubble-user-bg:     var(--primary-soft-bg);
+  --bubble-user-border: var(--primary-soft-border);
+}
+
+/* ── Google Fonts (CDN) ───────────────────────────────────────────────── */
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap");
+
+/* ── Semantic type utility classes ─────────────────────────────────────── */
+.bf-body { font-family: var(--font-body); font-size: var(--fs-body); color: var(--on-background); line-height: 1.5; }
+.bf-h1 { font-family: var(--font-headline); font-size: var(--fs-h1); font-weight: 700; letter-spacing: -0.04em; color: var(--on-background); }
+.bf-h1-accent { color: var(--primary); }
+.bf-h2 { font-family: var(--font-headline); font-size: var(--fs-h2); font-weight: 700; letter-spacing: -0.02em; color: var(--on-surface); }
+.bf-h3 { font-family: var(--font-headline); font-size: var(--fs-h3); font-weight: 700; color: var(--on-surface); }
+.bf-p { font-family: var(--font-body); font-size: var(--fs-body); line-height: 1.65; color: var(--on-background); }
+.bf-eyebrow { font-family: var(--font-label); font-size: var(--fs-2xs); font-weight: 700; color: var(--fg-4); text-transform: uppercase; letter-spacing: 0.2em; }
+.bf-eyebrow-tiny { font-family: var(--font-label); font-size: var(--fs-3xs); font-weight: 700; color: var(--fg-4); text-transform: uppercase; letter-spacing: 0.25em; }
+.bf-label { font-family: var(--font-label); font-size: var(--fs-xs); color: var(--on-surface-variant); }
+.bf-mono { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--fg-2); }
+.bf-stat-number { font-family: var(--font-headline); font-weight: 700; font-size: 1.875rem; line-height: 1; color: var(--on-surface); }
+.bf-stat-number--accent  { color: var(--primary); }
+.bf-stat-number--success { color: var(--success); }
+.bf-stat-number--warn    { color: var(--warn); }
+.bf-stat-number--danger  { color: var(--danger); }
+
+code, .bf-code { font-family: var(--font-mono); font-size: 0.8em; color: var(--fg-2); background: var(--surface-container-high); padding: 0.1em 0.4em; border-radius: var(--radius-xs); }
+
+/* Logo color-on-dark override for the icon-multi SVG (keeps brand gradient on light bg) */

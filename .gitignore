@@ -39,3 +39,8 @@ tickets-cli/tickets/
 
 # Generated settings
 settings.json
+
+# Session artifacts
+.playwright-mcp/
+workers-follow-up.zip
+wfu-dashboard-s5.jpeg
