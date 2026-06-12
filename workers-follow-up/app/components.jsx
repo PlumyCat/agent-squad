@@ -223,6 +223,13 @@ function TopNav({ clock, online, onToggleTheme, theme, onRefresh, lastRefresh, l
 
 /* ── Left sidebar ─────────────────────────────────────────── */
 function Sidebar({ view, setView, counts, onCreate }) {
+  // Collapsible: icon-only rail (~64px) for half-screen window layouts.
+  // Persisted per browser so the choice survives reloads.
+  const [collapsed, setCollapsed] = React.useState(() => localStorage.getItem('csq-sidebar-collapsed') === '1');
+  const toggleCollapsed = () => setCollapsed(c => {
+    localStorage.setItem('csq-sidebar-collapsed', c ? '0' : '1');
+    return !c;
+  });
   const items = [
     { id: 'dashboard', label: 'Vue d\'ensemble', icon: 'space_dashboard' },
     { id: 'workers', label: 'Workers', icon: 'memory', badge: counts.activeWorkers },
@@ -232,41 +239,78 @@ function Sidebar({ view, setView, counts, onCreate }) {
   const attn = counts.waiting + counts.blocked;
   return (
     <aside style={{
-      width: 232, flex: 'none', display: 'flex', flexDirection: 'column',
-      background: 'var(--surface-container-lowest)', borderRight: '1px solid var(--border-hairline)'
+      width: collapsed ? 64 : 232, flex: 'none', display: 'flex', flexDirection: 'column',
+      background: 'var(--surface-container-lowest)', borderRight: '1px solid var(--border-hairline)',
+      transition: 'width var(--dur-fast, 0.15s) ease', overflow: 'hidden'
     }}>
-      <div style={{ padding: '16px 14px 10px' }}>
-        <div className="eyebrow" style={{ padding: '0 10px 8px' }}>Supervision</div>
+      <div style={{ padding: collapsed ? '16px 8px 10px' : '16px 14px 10px' }}>
+        {!collapsed && <div className="eyebrow" style={{ padding: '0 10px 8px' }}>Supervision</div>}
         <nav style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {items.map(it => (
-            <button key={it.id} className={'nav-item' + (view === it.id ? ' active' : '')} onClick={() => setView(it.id)}>
+            <button key={it.id} className={'nav-item' + (view === it.id ? ' active' : '')} onClick={() => setView(it.id)}
+              title={collapsed ? it.label + (it.badge ? ` (${it.badge})` : '') : undefined}
+              style={collapsed ? { justifyContent: 'center', padding: '10px 0' } : undefined}>
               <Icon name={it.icon} size={20} />
-              <span style={{ flex: 1 }}>{it.label}</span>
-              {it.badge ? <span className="font-mono" style={{ fontSize: 10, color: 'var(--fg-4)' }}>{it.badge}</span> : null}
+              {!collapsed && <span style={{ flex: 1 }}>{it.label}</span>}
+              {!collapsed && it.badge ? <span className="font-mono" style={{ fontSize: 10, color: 'var(--fg-4)' }}>{it.badge}</span> : null}
             </button>
           ))}
         </nav>
       </div>
 
-      <div className="divider" style={{ margin: '6px 14px' }}></div>
+      <div className="divider" style={{ margin: collapsed ? '6px 8px' : '6px 14px' }}></div>
 
       {/* Signals block */}
-      <div style={{ padding: '8px 14px' }}>
-        <div className="eyebrow" style={{ padding: '0 10px 8px' }}>Signaux</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '0 4px' }}>
-          <SignalRow tone="warn" icon="pending" label="En attente" n={counts.waiting} onClick={() => setView('dashboard')} />
-          <SignalRow tone="danger" icon="block" label="Bloqués" n={counts.blocked} onClick={() => setView('dashboard')} />
+      <div style={{ padding: collapsed ? '8px 8px' : '8px 14px' }}>
+        {!collapsed && <div className="eyebrow" style={{ padding: '0 10px 8px' }}>Signaux</div>}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: collapsed ? 0 : '0 4px' }}>
+          {collapsed ? (
+            <>
+              <SignalDot tone="warn" icon="pending" label="En attente" n={counts.waiting} onClick={() => setView('dashboard')} />
+              <SignalDot tone="danger" icon="block" label="Bloqués" n={counts.blocked} onClick={() => setView('dashboard')} />
+            </>
+          ) : (
+            <>
+              <SignalRow tone="warn" icon="pending" label="En attente" n={counts.waiting} onClick={() => setView('dashboard')} />
+              <SignalRow tone="danger" icon="block" label="Bloqués" n={counts.blocked} onClick={() => setView('dashboard')} />
+            </>
+          )}
         </div>
       </div>
 
       <div style={{ flex: 1 }}></div>
 
-      <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 4px' }}>
-          <span className="font-mono fg-4" style={{ fontSize: 10 }}>tmux · {counts.totalWorkers} sessions</span>
-        </div>
+      <div style={{ padding: collapsed ? 8 : 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {!collapsed && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 4px' }}>
+            <span className="font-mono fg-4" style={{ fontSize: 10 }}>tmux · {counts.totalWorkers} sessions</span>
+          </div>
+        )}
+        <button className="btn btn-icon" onClick={toggleCollapsed}
+          title={collapsed ? 'Déplier le panneau' : 'Replier le panneau'}
+          style={{ alignSelf: collapsed ? 'center' : 'flex-end' }}>
+          <Icon name={collapsed ? 'chevron_right' : 'chevron_left'} size={17} />
+        </button>
       </div>
     </aside>
+  );
+}
+
+/* Compact signal for the collapsed rail: icon + count, tooltip carries the label. */
+function SignalDot({ tone, icon, label, n, onClick }) {
+  const v = { warn: 'var(--warn)', danger: 'var(--danger)' }[tone];
+  const muted = n === 0;
+  return (
+    <button onClick={onClick} title={`${label} : ${n}`} style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, width: '100%',
+      padding: '6px 0', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+      background: muted ? 'transparent' : `color-mix(in srgb, ${v} 9%, transparent)`,
+      border: '1px solid ' + (muted ? 'var(--border-hairline)' : `color-mix(in srgb, ${v} 26%, transparent)`),
+      transition: 'all var(--dur-fast)'
+    }}>
+      <Icon name={icon} size={15} style={{ color: muted ? 'var(--fg-4)' : v }} fill={!muted} />
+      <span className="font-headline" style={{ fontSize: 12, fontWeight: 700, color: muted ? 'var(--fg-4)' : v }}>{n}</span>
+    </button>
   );
 }
 
@@ -288,4 +332,4 @@ function SignalRow({ tone, icon, label, n, onClick }) {
   );
 }
 
-Object.assign(window, { Icon, RelTime, StatusBadge, WDot, AgentChip, Avatar, StatTile, SectionHead, EmptyState, TopNav, Sidebar, SignalRow });
+Object.assign(window, { Icon, RelTime, StatusBadge, WDot, AgentChip, Avatar, StatTile, SectionHead, EmptyState, TopNav, Sidebar, SignalRow, SignalDot });
