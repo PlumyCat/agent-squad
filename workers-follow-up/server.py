@@ -15,7 +15,7 @@ import subprocess
 from datetime import datetime, timezone
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 try:
     from providers import agent_teams, worker_actions
@@ -273,16 +273,22 @@ def build_state_codex() -> dict:
     }
 
 
-def build_state() -> dict:
-    """Dispatch to the configured provider.
+def build_state(provider: str | None = None) -> dict:
+    """Dispatch to the requested provider.
+
+    ``provider`` (per-request, e.g. ``?provider=codex``) wins over the
+    WFU_PROVIDER env default. Both pages can therefore be served by one
+    process: ``/`` polls agent_teams, ``/codex`` polls the legacy backend.
 
     WFU_PROVIDER=agent_teams (default) -> Claude Code Agent Teams.
     WFU_PROVIDER=codex                 -> legacy tmux/codex backend above.
     """
-    if active_provider() == "codex":
+    resolved = provider if provider in {"codex", "agent_teams"} else active_provider()
+    if resolved == "codex":
         state = build_state_codex()
     else:
         state = agent_teams.build_state()
+    state["provider"] = resolved
     # Enrich each worker with killable so the UI can enable/disable the kill
     # button per worker (true only for live tmux sessions; in-process Agent
     # Teams workers get false). Done centrally so the provider modules stay
@@ -314,19 +320,27 @@ class Handler(SimpleHTTPRequestHandler):
         path = unquote(parsed.path)
 
         if path == "/api/state":
-            self.send_json(build_state())
+            query = parse_qs(parsed.query)
+            provider = (query.get("provider", [""])[0] or "").strip().lower() or None
+            self.send_json(build_state(provider))
             return
 
         if path.startswith("/api/workers/") and path.endswith("/logs"):
             session = path.removeprefix("/api/workers/").removesuffix("/logs").strip("/")
-            if active_provider() == "codex":
-                entries = log_entries(session)
-            else:
+            # Dispatch by identifier shape, not by global provider: Agent Teams
+            # workers are "name@team" (transcript JSONL), legacy codex workers
+            # are tmux session names (capture-pane). Both pages work at once.
+            if "@" in session:
                 entries = agent_teams.worker_logs(session)
+            else:
+                entries = log_entries(session)
             self.send_json({"worker": session, "logs": entries})
             return
 
-        if path in {"/", ""}:
+        # "/" serves the Claude Agent Teams page; "/codex" serves the same SPA,
+        # which switches its data source to the legacy codex/tmux provider by
+        # reading its own URL path (see app/app.jsx).
+        if path in {"/", "", "/codex", "/codex/"}:
             self.path = "/Claude%20Squad.html"
             return super().do_GET()
 

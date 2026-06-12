@@ -3,6 +3,13 @@
    ============================================================ */
 const { useState, useEffect, useRef, useCallback } = React;
 
+// Page provider: "/" polls Claude Agent Teams, "/codex" polls the legacy
+// codex/tmux backend (transition period — both worlds, one server).
+const IS_CODEX_PAGE = window.location.pathname.replace(/\/+$/, '') === '/codex';
+const STATE_URL = '/api/state' + (IS_CODEX_PAGE ? '?provider=codex' : '');
+window.CSQ_IS_CODEX_PAGE = IS_CODEX_PAGE;
+if (IS_CODEX_PAGE) document.title = 'Codex Squad — Supervision';
+
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "accent": "#8686d4",
   "density": "comfortable",
@@ -222,7 +229,7 @@ function App() {
     if (refreshInFlight.current) return false;
     refreshInFlight.current = true;
     try {
-      const res = await fetch('/api/state', { cache: 'no-store' });
+      const res = await fetch(STATE_URL, { cache: 'no-store' });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const payload = await res.json();
       const nextWorkers = (payload.workers || []).map(hydrateWorker);
