@@ -39,7 +39,7 @@ mimetypes.add_type("text/babel; charset=utf-8", ".jsx")
 
 def active_provider() -> str:
     """Return the configured provider name (``agent_teams`` or ``codex``)."""
-    return os.environ.get("WFU_PROVIDER", "agent_teams").strip().lower()
+    return os.environ.get("WFU_PROVIDER", "codex").strip().lower()
 
 
 # Map a worker_actions.kill_worker ``reason`` to an HTTP status code.

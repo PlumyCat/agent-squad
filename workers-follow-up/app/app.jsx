@@ -3,12 +3,13 @@
    ============================================================ */
 const { useState, useEffect, useRef, useCallback } = React;
 
-// Page provider: "/" polls Claude Agent Teams, "/codex" polls the legacy
-// codex/tmux backend (transition period — both worlds, one server).
+// Provider source: "/" reads the server default (codex/tmux workers — the
+// Claude squad-cli backend). "/codex" forces the same legacy provider; both
+// pages now show the tmux world. The native agent_teams provider is no longer
+// wired to a page (full-Claude squad-cli/tmux setup, MYL-114/MYL-115).
 const IS_CODEX_PAGE = window.location.pathname.replace(/\/+$/, '') === '/codex';
 const STATE_URL = '/api/state' + (IS_CODEX_PAGE ? '?provider=codex' : '');
 window.CSQ_IS_CODEX_PAGE = IS_CODEX_PAGE;
-if (IS_CODEX_PAGE) document.title = 'Codex Squad — Supervision';
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "accent": "#8686d4",

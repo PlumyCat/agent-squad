@@ -1,11 +1,15 @@
-# codex-cli
+# claude-cli
 
 CLI for spawning and managing workers in tmux sessions.
+
+Default backend: **Claude** (`claude --dangerously-skip-permissions`, sessions
+prefixed `claude-`). Codex remains available via `--agent codex` or
+`SQUAD_AGENT=codex`.
 
 ## Installation
 
 ```bash
-cd codex-cli
+cd claude-cli
 uv sync
 ```
 
@@ -96,6 +100,6 @@ uv run python main.py kill auth-impl
 
 ## Notes
 
-- Sessions are prefixed with `codex-`
+- Sessions are prefixed with the agent name (`claude-` by default, `codex-` with `--agent codex`)
 - Use `capture` rather than `tmux attach` to monitor
 - Workers can auto-terminate with `/exit`

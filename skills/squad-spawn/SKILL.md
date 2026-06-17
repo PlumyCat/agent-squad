@@ -69,7 +69,7 @@ Note: Avoid parentheses `()` in the prompt with --ralph (bash escaping issue).
 
 ## Notes
 
+- Claude is the default backend (sessions `claude-*`); use `--agent codex` for a Codex worker
 - Codex workers are launched with bypassed approvals/sandbox for autonomy
-- Claude workers can still be launched with `--agent claude`
 - The `worker` role includes completion instructions for updating tickets
 - Use descriptive names and clear instructions

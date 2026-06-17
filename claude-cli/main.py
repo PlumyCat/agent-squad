@@ -117,7 +117,7 @@ def create_run_script(project_root: Path, command: list[str], session: str) -> P
 
 def normalize_agent(agent: str | None) -> str:
     """Return a supported agent name."""
-    selected = agent or os.environ.get("SQUAD_AGENT", "codex")
+    selected = agent or os.environ.get("SQUAD_AGENT", "claude")
     if selected not in AGENTS:
         raise click.ClickException(f"Unsupported agent '{selected}'. Choose: {', '.join(AGENTS)}")
     return selected
@@ -186,7 +186,7 @@ def cli():
 @click.option("--ticket", "-t", default=None, help="Ticket ID to associate with this worker")
 @click.option("--skill", "-s", multiple=True, help="Skill(s) to run after prompt (repeatable)")
 @click.option("--ralph", is_flag=True, help="Run with Ralph Loop for autonomous execution")
-@click.option("--agent", "-a", default=None, type=click.Choice(list(AGENTS)), help="Agent CLI to launch (default: codex or SQUAD_AGENT)")
+@click.option("--agent", "-a", default=None, type=click.Choice(list(AGENTS)), help="Agent CLI to launch (default: claude or SQUAD_AGENT)")
 def spawn(
     prompt: str,
     name: str | None,
