@@ -16,6 +16,8 @@ import subprocess
 import time
 import uuid
 import os
+import re
+import json
 import shlex
 import secrets
 from pathlib import Path
@@ -23,12 +25,36 @@ from pathlib import Path
 import click
 
 
+def _claude_command(project_root, prompt, extra_dirs):
+    """Build the bare `claude` launch command (the task is delivered after the
+    TUI is ready — see spawn).
+
+    - `--permission-mode bypassPermissions`: real autonomy. The legacy
+      `--dangerously-skip-permissions` did not engage reliably (workers kept
+      landing in "accept edits" and prompted on every bash command / out-of-
+      workspace read — nobody was there to answer, so they stalled forever).
+    - `--add-dir`: pre-authorize the dirs the worker will touch (its target
+      repo + the squad root for ./tickets and the prompt file) so reads/edits
+      don't prompt.
+
+    The task itself is NOT passed positionally: interactive `claude` does not
+    auto-submit a positional prompt (it lands on an empty input box). We instead
+    write the prompt to a file and, once the TUI is ready, send a one-line
+    "read this file and execute" trigger — robust against both the startup race
+    and the multiline-paste auto-submit problem.
+    """
+    cmd = ["claude", "--permission-mode", "bypassPermissions"]
+    for d in extra_dirs:
+        cmd += ["--add-dir", d]
+    return cmd
+
+
 AGENTS = {
     "codex": {
         "display": "Codex",
         "prefix": "codex",
         "interactive": False,
-        "command": lambda project_root, prompt: [
+        "command": lambda project_root, prompt, extra_dirs: [
             "codex",
             "exec",
             "--dangerously-bypass-approvals-and-sandbox",
@@ -43,7 +69,7 @@ AGENTS = {
         "display": "Claude",
         "prefix": "claude",
         "interactive": True,
-        "command": lambda _project_root, _prompt: ["claude", "--dangerously-skip-permissions"],
+        "command": _claude_command,
     },
 }
 
@@ -172,6 +198,83 @@ def get_role_context(role: str) -> str | None:
     return None
 
 
+# Markers that the Claude TUI is up and ready to receive input.
+_READY_MARKERS = ("for shortcuts", "bypass permissions", "accept edits", "Try \"", "│ >", "❯")
+
+# Pane patterns that mean the worker is blocked on a permission/confirmation
+# prompt — i.e. waiting for a human, but UNABLE to self-signal (the TUI prompt
+# blocks tool use). Detecting this from the pane is the whole point.
+_PERMISSION_PROMPT_RE = re.compile(
+    r"Do you want to proceed\?|(?:❯|>)\s*1\.\s*(?:Yes|No)|Approve only if you trust",
+    re.IGNORECASE,
+)
+# A worker still showing the greeting with an EMPTY input box never received
+# its task (the old send-keys race). The greyed placeholder gives it away.
+_NEVER_STARTED_RE = re.compile(r"Try \"|Welcome to Claude Code")
+# Signs the agent is actively thinking/running — definitely not stalled.
+_BUSY_RE = re.compile(r"esc to interrupt|tokens|Ionizing|Working|Reading|Running|⏺", re.IGNORECASE)
+
+_SIGNALS_WAITING_DIR = Path(__file__).parent.parent / "signals" / "waiting"
+
+
+def capture_pane(session: str, history: int = 0) -> str:
+    """Return the current tmux pane text for a session ("" on failure)."""
+    args = ["capture-pane", "-t", session, "-p"]
+    if history:
+        args += ["-S", f"-{history}"]
+    r = run_tmux(*args)
+    return r.stdout if r.returncode == 0 else ""
+
+
+def wait_for_claude_ready(session: str, timeout: int = 45) -> bool:
+    """Poll the pane until the Claude TUI is ready to receive keys.
+
+    Replaces the old fixed `time.sleep(5)` that raced Claude's startup. Only
+    used for follow-up send-keys (skills / ralph); the task prompt itself is
+    now passed positionally at launch.
+    """
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if any(m in capture_pane(session) for m in _READY_MARKERS):
+            return True
+        time.sleep(1)
+    return False
+
+
+def _waiting_signal(session: str) -> dict | None:
+    """Read an explicit waiting signal (signals/waiting/<session>.json)."""
+    f = _SIGNALS_WAITING_DIR / f"{session}.json"
+    if not f.exists():
+        return None
+    try:
+        return json.loads(f.read_text())
+    except Exception:
+        return {"message": "(waiting signal présent, illisible)"}
+
+
+def classify_worker(session: str, pane_a: str, pane_b: str) -> dict:
+    """Classify a worker's state from two pane snapshots taken a few seconds
+    apart, plus any explicit waiting signal. Crucially, the blocked/never-
+    started states are detected WITHOUT the worker's cooperation.
+    """
+    tail = "\n".join([l for l in pane_b.strip().splitlines() if l.strip()][-4:])
+    signal = _waiting_signal(session)
+    if signal:
+        return {"session": session, "state": "waiting_input", "source": "signal",
+                "question": signal.get("message", ""), "tail": tail}
+    if _PERMISSION_PROMPT_RE.search(pane_b):
+        return {"session": session, "state": "waiting_input", "source": "permission_prompt",
+                "question": tail, "tail": tail}
+    if _BUSY_RE.search(pane_b):
+        return {"session": session, "state": "working", "tail": tail}
+    idle = pane_a.strip() == pane_b.strip()  # nothing moved between snapshots
+    if idle and _NEVER_STARTED_RE.search(pane_b):
+        return {"session": session, "state": "never_started", "tail": tail}
+    if idle:
+        return {"session": session, "state": "stalled", "tail": tail}
+    return {"session": session, "state": "working", "tail": tail}
+
+
 @click.group()
 @click.version_option(version="0.1.0")
 def cli():
@@ -186,6 +289,7 @@ def cli():
 @click.option("--ticket", "-t", default=None, help="Ticket ID to associate with this worker")
 @click.option("--skill", "-s", multiple=True, help="Skill(s) to run after prompt (repeatable)")
 @click.option("--ralph", is_flag=True, help="Run with Ralph Loop for autonomous execution")
+@click.option("--workdir", "-w", default=None, help="Repo/dir the worker will work in — pre-authorized via --add-dir so edits/bash don't prompt. The worker should cd here (say so in the prompt).")
 @click.option("--agent", "-a", default=None, type=click.Choice(list(AGENTS)), help="Agent CLI to launch (default: claude or SQUAD_AGENT)")
 def spawn(
     prompt: str,
@@ -194,6 +298,7 @@ def spawn(
     ticket: str | None,
     skill: tuple[str, ...],
     ralph: bool,
+    workdir: str | None,
     agent: str | None,
 ):
     """Spawn a worker in a new tmux session.
@@ -251,50 +356,83 @@ def spawn(
             )
 
     # Create tmux session with the selected agent CLI.
-    # Start in project root so ./tickets and other CLIs are accessible
+    # Start in project root so ./tickets and other CLIs are accessible.
     project_root_path = Path(__file__).parent.parent
     project_root = str(project_root_path)
+
+    # Dirs the worker is pre-authorized to touch (autonomy without prompts):
+    # its target repo (if given) plus the squad root for ./tickets etc.
+    extra_dirs = [project_root]
+    if workdir:
+        workdir_abs = str(Path(workdir).expanduser().resolve())
+        if workdir_abs not in extra_dirs:
+            extra_dirs.insert(0, workdir_abs)
+
     if skill and not AGENTS[agent]["interactive"]:
         full_prompt += "\n\nRequested startup skills/workflows:\n" + "\n".join(f"- {s}" for s in skill)
 
-    command = AGENTS[agent]["command"](project_root, full_prompt)
+    interactive = AGENTS[agent]["interactive"]
+
+    # Interactive Claude does NOT auto-submit a positional prompt, so we write
+    # the task to a file and trigger it after startup with a one-line "read this
+    # file and execute" message (avoids both the startup race and the multiline
+    # auto-submit problem). The file lives under the squad root, already in
+    # --add-dir, so reading it doesn't prompt.
+    prompt_file = None
+    if interactive and not ralph:
+        prompts_dir = project_root_path / ".squad-prompts"
+        prompts_dir.mkdir(exist_ok=True)
+        prompt_file = prompts_dir / f"{session}.txt"
+        prompt_file.write_text(full_prompt, encoding="utf-8")
+
+    command = AGENTS[agent]["command"](project_root, full_prompt, extra_dirs)
     run_script = create_run_script(project_root_path, command, session)
     result = run_tmux("new-session", "-d", "-s", session, "-c", project_root, f"zsh {shlex.quote(str(run_script))}")
     if result.returncode != 0:
         click.echo(f"Error creating session: {result.stderr}", err=True)
         raise SystemExit(1)
 
-    # Wait for the agent CLI to initialize.
     click.echo(f"Starting {display} in session '{session}'...")
-    time.sleep(5)
 
-    if AGENTS[agent]["interactive"]:
-        # Send the prompt (or ralph-loop command if --ralph)
+    if interactive:
+        # No fixed sleep — poll until the TUI is actually ready, otherwise any
+        # follow-up keys get dropped like the old prompt did.
+        if not wait_for_claude_ready(session):
+            click.echo(
+                "Warning: Claude TUI not detected as ready within timeout; "
+                "run 'squad status --json' to check the worker.",
+                err=True,
+            )
+
         if ralph:
-            # Use Ralph Loop for autonomous execution
-            ralph_cmd = f"/ralph-loop:ralph-loop {prompt}"
             click.echo("Ralph Loop mode enabled")
-            run_tmux("send-keys", "-t", session, ralph_cmd, "Enter")
-        else:
-            run_tmux("send-keys", "-t", session, full_prompt, "Enter")
-            # Send extra Enter to confirm paste in CLIs that ask before submitting pasted text.
-            time.sleep(1)
+            run_tmux("send-keys", "-t", session, "-l", f"/ralph-loop:ralph-loop {prompt}")
+            run_tmux("send-keys", "-t", session, "Enter")
+        elif prompt_file is not None:
+            trigger = (
+                f"Lis le fichier {prompt_file} et exécute intégralement, dans "
+                f"l'ordre, les consignes qu'il contient. Commence maintenant, "
+                f"ne pose pas de question."
+            )
+            run_tmux("send-keys", "-t", session, "-l", trigger)
+            time.sleep(0.5)
             run_tmux("send-keys", "-t", session, "Enter")
 
-        # Send skills if specified (after a delay for the interactive agent to start processing)
+        # Activate skills after the task has been delivered. `-l` sends the text
+        # literally; Enter is a separate key event.
         if skill:
             click.echo(f"Skills to activate: {', '.join(skill)}")
-            time.sleep(3)
+            time.sleep(2)
             for s in skill:
-                # Normalize skill name (add / prefix if missing)
                 skill_cmd = s if s.startswith("/") else f"/{s}"
-                run_tmux("send-keys", "-t", session, skill_cmd, "Enter")
+                run_tmux("send-keys", "-t", session, "-l", skill_cmd)
+                run_tmux("send-keys", "-t", session, "Enter")
                 click.echo(f"  Sent skill: {skill_cmd}")
                 time.sleep(1)
 
     click.echo(f"Spawned worker: {session}")
     click.echo(f"Attach with: tmux attach -t {session}")
-    click.echo(f"Capture with: uv run python main.py capture {session}")
+    click.echo(f"Status (JSON): ./squad status --json")
 
 
 @cli.command()
@@ -354,6 +492,41 @@ def list_sessions(agent: str | None):
             click.echo(f"  - {result.stdout.strip()}")
         else:
             click.echo(f"  - {session}")
+
+
+@cli.command()
+@click.option("--json", "as_json", is_flag=True, help="Machine-readable JSON for the orchestrator.")
+@click.option("--agent", "-a", default=None, type=click.Choice(list(AGENTS)), help="Filter by agent")
+def status(as_json: bool, agent: str | None):
+    """Report each worker's state — including the states a worker CANNOT
+    self-report: blocked on a permission prompt, or never started.
+
+    States: working | waiting_input | stalled | never_started.
+    The orchestrator polls `status --json` and acts on anything != working
+    (answer the prompt, nudge, or escalate to the human).
+    """
+    sessions = get_worker_sessions(agent)
+    if not sessions:
+        click.echo("[]" if as_json else "No active workers")
+        return
+
+    # Two snapshots a few seconds apart: a moving pane => working; a frozen
+    # pane that isn't a prompt => stalled.
+    snap_a = {s: capture_pane(s) for s in sessions}
+    time.sleep(3)
+    snap_b = {s: capture_pane(s) for s in sessions}
+    report = [classify_worker(s, snap_a[s], snap_b[s]) for s in sessions]
+
+    if as_json:
+        click.echo(json.dumps(report, ensure_ascii=False))
+        return
+
+    icon = {"working": "▶", "waiting_input": "⏸", "stalled": "⚠", "never_started": "✗"}
+    click.echo("Worker status:")
+    for r in report:
+        click.echo(f"  {icon.get(r['state'], '?')} {r['session']}: {r['state']}")
+        if r.get("question"):
+            click.echo(f"      ↳ {r['question'].strip()[:200]}")
 
 
 @cli.command()
