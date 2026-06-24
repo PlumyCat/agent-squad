@@ -44,3 +44,6 @@ settings.json
 .playwright-mcp/
 workers-follow-up.zip
 wfu-dashboard-s5.jpeg
+
+# Per-session worker prompt files (squad spawn)
+.squad-prompts/
