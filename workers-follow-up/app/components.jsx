@@ -174,20 +174,9 @@ function TopNav({ clock, online, onToggleTheme, theme, onRefresh, lastRefresh, l
           background: 'color-mix(in srgb, var(--primary) 16%, transparent)', color: 'var(--primary)'
         }}><Icon name="hub" size={18} fill /></span>
         <span className="font-headline fg-1" style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-0.02em' }}>
-          {window.CSQ_IS_CODEX_PAGE ? 'Codex Squad' : 'Claude Squad'}
+          Claude Squad
         </span>
         <span className="font-mono fg-4" style={{ fontSize: 10, padding: '2px 7px', borderRadius: 'var(--radius-xs)', border: '1px solid var(--border-hairline)' }}>local</span>
-        <a href={window.CSQ_IS_CODEX_PAGE ? '/' : '/codex'} className="font-label fg-3"
-          title={window.CSQ_IS_CODEX_PAGE ? 'Voir les workers Claude Agent Teams' : 'Voir les workers codex/tmux'}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', textDecoration: 'none',
-            fontSize: 10.5, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
-            borderRadius: 'var(--radius-pill)', border: '1px solid var(--border-hairline)',
-            background: 'var(--surface-container-high)'
-          }}>
-          <Icon name="swap_horiz" size={14} />
-          {window.CSQ_IS_CODEX_PAGE ? 'Claude' : 'Codex'}
-        </a>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <div style={{
