@@ -25,7 +25,7 @@ from pathlib import Path
 import click
 
 
-def _claude_command(project_root, prompt, extra_dirs):
+def _claude_command(project_root, prompt, extra_dirs, model):
     """Build the bare `claude` launch command (the task is delivered after the
     TUI is ready — see spawn).
 
@@ -33,6 +33,9 @@ def _claude_command(project_root, prompt, extra_dirs):
       `--dangerously-skip-permissions` did not engage reliably (workers kept
       landing in "accept edits" and prompted on every bash command / out-of-
       workspace read — nobody was there to answer, so they stalled forever).
+    - `--model`: without it the worker inherits the user's default model
+      (Opus/Fable — slow and expensive for worker-grade tasks). Cost control
+      lives here: workers default to `sonnet` (see DEFAULT_MODELS).
     - `--add-dir`: pre-authorize the dirs the worker will touch (its target
       repo + the squad root for ./tickets and the prompt file) so reads/edits
       don't prompt.
@@ -44,8 +47,24 @@ def _claude_command(project_root, prompt, extra_dirs):
     and the multiline-paste auto-submit problem.
     """
     cmd = ["claude", "--permission-mode", "bypassPermissions"]
+    if model:
+        cmd += ["--model", model]
     for d in extra_dirs:
         cmd += ["--add-dir", d]
+    return cmd
+
+
+def _codex_command(project_root, prompt, extra_dirs, model):
+    cmd = [
+        "codex",
+        "exec",
+        "--dangerously-bypass-approvals-and-sandbox",
+        "--sandbox",
+        "danger-full-access",
+    ]
+    if model:
+        cmd += ["--model", model]
+    cmd += ["--cd", project_root, prompt]
     return cmd
 
 
@@ -54,16 +73,7 @@ AGENTS = {
         "display": "Codex",
         "prefix": "codex",
         "interactive": False,
-        "command": lambda project_root, prompt, extra_dirs: [
-            "codex",
-            "exec",
-            "--dangerously-bypass-approvals-and-sandbox",
-            "--sandbox",
-            "danger-full-access",
-            "--cd",
-            project_root,
-            prompt,
-        ],
+        "command": _codex_command,
     },
     "claude": {
         "display": "Claude",
@@ -71,6 +81,15 @@ AGENTS = {
         "interactive": True,
         "command": _claude_command,
     },
+}
+
+# Default model per agent when neither --model nor SQUAD_MODEL is set.
+# Claude workers run on sonnet: opus/fable are reserved for orchestrator-side
+# work (story writing, review) where the extra cost is justified. Codex has
+# its own model namespace, so no default is imposed there.
+DEFAULT_MODELS = {
+    "claude": "sonnet",
+    "codex": None,
 }
 
 NAME_ADJECTIVES = [
@@ -145,7 +164,9 @@ def normalize_agent(agent: str | None) -> str:
     """Return a supported agent name."""
     selected = agent or os.environ.get("SQUAD_AGENT", "claude")
     if selected not in AGENTS:
-        raise click.ClickException(f"Unsupported agent '{selected}'. Choose: {', '.join(AGENTS)}")
+        raise click.ClickException(
+            f"Unsupported agent '{selected}'. Choose: {', '.join(AGENTS)}"
+        )
     return selected
 
 
@@ -172,7 +193,11 @@ def get_worker_sessions(agent: str | None = None) -> list[str]:
     result = run_tmux("list-sessions", "-F", "#{session_name}")
     if result.returncode != 0:
         return []
-    prefixes = [AGENTS[normalize_agent(agent)]["prefix"]] if agent else [a["prefix"] for a in AGENTS.values()]
+    prefixes = (
+        [AGENTS[normalize_agent(agent)]["prefix"]]
+        if agent
+        else [a["prefix"] for a in AGENTS.values()]
+    )
     return [
         s
         for s in result.stdout.strip().split("\n")
@@ -199,7 +224,14 @@ def get_role_context(role: str) -> str | None:
 
 
 # Markers that the Claude TUI is up and ready to receive input.
-_READY_MARKERS = ("for shortcuts", "bypass permissions", "accept edits", "Try \"", "│ >", "❯")
+_READY_MARKERS = (
+    "for shortcuts",
+    "bypass permissions",
+    "accept edits",
+    'Try "',
+    "│ >",
+    "❯",
+)
 
 # Pane patterns that mean the worker is blocked on a permission/confirmation
 # prompt — i.e. waiting for a human, but UNABLE to self-signal (the TUI prompt
@@ -212,7 +244,9 @@ _PERMISSION_PROMPT_RE = re.compile(
 # its task (the old send-keys race). The greyed placeholder gives it away.
 _NEVER_STARTED_RE = re.compile(r"Try \"|Welcome to Claude Code")
 # Signs the agent is actively thinking/running — definitely not stalled.
-_BUSY_RE = re.compile(r"esc to interrupt|tokens|Ionizing|Working|Reading|Running|⏺", re.IGNORECASE)
+_BUSY_RE = re.compile(
+    r"esc to interrupt|tokens|Ionizing|Working|Reading|Running|⏺", re.IGNORECASE
+)
 
 _SIGNALS_WAITING_DIR = Path(__file__).parent.parent / "signals" / "waiting"
 
@@ -260,11 +294,21 @@ def classify_worker(session: str, pane_a: str, pane_b: str) -> dict:
     tail = "\n".join([l for l in pane_b.strip().splitlines() if l.strip()][-4:])
     signal = _waiting_signal(session)
     if signal:
-        return {"session": session, "state": "waiting_input", "source": "signal",
-                "question": signal.get("message", ""), "tail": tail}
+        return {
+            "session": session,
+            "state": "waiting_input",
+            "source": "signal",
+            "question": signal.get("message", ""),
+            "tail": tail,
+        }
     if _PERMISSION_PROMPT_RE.search(pane_b):
-        return {"session": session, "state": "waiting_input", "source": "permission_prompt",
-                "question": tail, "tail": tail}
+        return {
+            "session": session,
+            "state": "waiting_input",
+            "source": "permission_prompt",
+            "question": tail,
+            "tail": tail,
+        }
     if _BUSY_RE.search(pane_b):
         return {"session": session, "state": "working", "tail": tail}
     idle = pane_a.strip() == pane_b.strip()  # nothing moved between snapshots
@@ -284,13 +328,38 @@ def cli():
 
 @cli.command()
 @click.argument("prompt")
-@click.option("--name", "-n", default=None, help="Session name (auto-generated if not provided)")
+@click.option(
+    "--name", "-n", default=None, help="Session name (auto-generated if not provided)"
+)
 @click.option("--role", "-r", default=None, help="Role to apply from context-cli")
-@click.option("--ticket", "-t", default=None, help="Ticket ID to associate with this worker")
-@click.option("--skill", "-s", multiple=True, help="Skill(s) to run after prompt (repeatable)")
-@click.option("--ralph", is_flag=True, help="Run with Ralph Loop for autonomous execution")
-@click.option("--workdir", "-w", default=None, help="Repo/dir the worker will work in — pre-authorized via --add-dir so edits/bash don't prompt. The worker should cd here (say so in the prompt).")
-@click.option("--agent", "-a", default=None, type=click.Choice(list(AGENTS)), help="Agent CLI to launch (default: claude or SQUAD_AGENT)")
+@click.option(
+    "--ticket", "-t", default=None, help="Ticket ID to associate with this worker"
+)
+@click.option(
+    "--skill", "-s", multiple=True, help="Skill(s) to run after prompt (repeatable)"
+)
+@click.option(
+    "--ralph", is_flag=True, help="Run with Ralph Loop for autonomous execution"
+)
+@click.option(
+    "--workdir",
+    "-w",
+    default=None,
+    help="Repo/dir the worker will work in — pre-authorized via --add-dir so edits/bash don't prompt. The worker should cd here (say so in the prompt).",
+)
+@click.option(
+    "--agent",
+    "-a",
+    default=None,
+    type=click.Choice(list(AGENTS)),
+    help="Agent CLI to launch (default: claude or SQUAD_AGENT)",
+)
+@click.option(
+    "--model",
+    "-m",
+    default=None,
+    help="Model for the worker (alias like sonnet/opus/haiku or full ID). Priority: --model > SQUAD_MODEL env > per-agent default (claude: sonnet).",
+)
 def spawn(
     prompt: str,
     name: str | None,
@@ -300,6 +369,7 @@ def spawn(
     ralph: bool,
     workdir: str | None,
     agent: str | None,
+    model: str | None,
 ):
     """Spawn a worker in a new tmux session.
 
@@ -314,10 +384,14 @@ def spawn(
         spawn --ralph "Long autonomous task"
         spawn --ralph --role worker --ticket abc123 "Complex feature"
         spawn --skill bmad:dev-story "Workflow-driven task"
+        spawn --model opus "Complex refactoring worth the extra cost"
     """
     agent = normalize_agent(agent)
     prefix = AGENTS[agent]["prefix"]
     display = AGENTS[agent]["display"]
+
+    # Model resolution: explicit flag > SQUAD_MODEL env > per-agent default.
+    model = model or os.environ.get("SQUAD_MODEL") or DEFAULT_MODELS[agent]
 
     # Generate session name with the agent prefix
     if name:
@@ -369,7 +443,9 @@ def spawn(
             extra_dirs.insert(0, workdir_abs)
 
     if skill and not AGENTS[agent]["interactive"]:
-        full_prompt += "\n\nRequested startup skills/workflows:\n" + "\n".join(f"- {s}" for s in skill)
+        full_prompt += "\n\nRequested startup skills/workflows:\n" + "\n".join(
+            f"- {s}" for s in skill
+        )
 
     interactive = AGENTS[agent]["interactive"]
 
@@ -385,13 +461,23 @@ def spawn(
         prompt_file = prompts_dir / f"{session}.txt"
         prompt_file.write_text(full_prompt, encoding="utf-8")
 
-    command = AGENTS[agent]["command"](project_root, full_prompt, extra_dirs)
+    command = AGENTS[agent]["command"](project_root, full_prompt, extra_dirs, model)
     run_script = create_run_script(project_root_path, command, session)
-    result = run_tmux("new-session", "-d", "-s", session, "-c", project_root, f"zsh {shlex.quote(str(run_script))}")
+    result = run_tmux(
+        "new-session",
+        "-d",
+        "-s",
+        session,
+        "-c",
+        project_root,
+        f"zsh {shlex.quote(str(run_script))}",
+    )
     if result.returncode != 0:
         click.echo(f"Error creating session: {result.stderr}", err=True)
         raise SystemExit(1)
 
+    if model:
+        click.echo(f"Model: {model}")
     click.echo(f"Starting {display} in session '{session}'...")
 
     if interactive:
@@ -406,7 +492,9 @@ def spawn(
 
         if ralph:
             click.echo("Ralph Loop mode enabled")
-            run_tmux("send-keys", "-t", session, "-l", f"/ralph-loop:ralph-loop {prompt}")
+            run_tmux(
+                "send-keys", "-t", session, "-l", f"/ralph-loop:ralph-loop {prompt}"
+            )
             run_tmux("send-keys", "-t", session, "Enter")
         elif prompt_file is not None:
             trigger = (
@@ -432,12 +520,14 @@ def spawn(
 
     click.echo(f"Spawned worker: {session}")
     click.echo(f"Attach with: tmux attach -t {session}")
-    click.echo(f"Status (JSON): ./squad status --json")
+    click.echo("Status (JSON): ./squad status --json")
 
 
 @cli.command()
 @click.argument("session")
-@click.option("--lines", "-l", default=30, help="Number of lines to capture (default: 30)")
+@click.option(
+    "--lines", "-l", default=30, help="Number of lines to capture (default: 30)"
+)
 def capture(session: str, lines: int):
     """Capture output from a worker session.
 
@@ -465,7 +555,13 @@ def capture(session: str, lines: int):
 
 
 @cli.command("list")
-@click.option("--agent", "-a", default=None, type=click.Choice(list(AGENTS)), help="Filter by agent")
+@click.option(
+    "--agent",
+    "-a",
+    default=None,
+    type=click.Choice(list(AGENTS)),
+    help="Filter by agent",
+)
 def list_sessions(agent: str | None):
     """List all active worker sessions.
 
@@ -495,8 +591,19 @@ def list_sessions(agent: str | None):
 
 
 @cli.command()
-@click.option("--json", "as_json", is_flag=True, help="Machine-readable JSON for the orchestrator.")
-@click.option("--agent", "-a", default=None, type=click.Choice(list(AGENTS)), help="Filter by agent")
+@click.option(
+    "--json",
+    "as_json",
+    is_flag=True,
+    help="Machine-readable JSON for the orchestrator.",
+)
+@click.option(
+    "--agent",
+    "-a",
+    default=None,
+    type=click.Choice(list(AGENTS)),
+    help="Filter by agent",
+)
 def status(as_json: bool, agent: str | None):
     """Report each worker's state — including the states a worker CANNOT
     self-report: blocked on a permission prompt, or never started.

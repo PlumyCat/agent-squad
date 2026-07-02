@@ -28,7 +28,25 @@ uv run python main.py spawn --name fib-worker "Implement fibonacci"
 
 # Spawn with a role (requires context-cli)
 uv run python main.py spawn --role worker "Fix the bug in auth.py"
+
+# Force a model (cost control)
+uv run python main.py spawn --model opus "Complex refactoring"
 ```
+
+#### Worker model (cost control)
+
+Claude workers are launched with an explicit `--model` so they never inherit
+the user's default model (Opus/Fable — expensive and slow for worker tasks).
+
+Resolution order: `--model` flag > `SQUAD_MODEL` env var > default `sonnet`.
+
+```bash
+uv run python main.py spawn "task"                 # → claude --model sonnet
+uv run python main.py spawn -m opus "hard task"    # → claude --model opus
+SQUAD_MODEL=haiku uv run python main.py spawn "t"  # → claude --model haiku
+```
+
+Codex workers get no default model; `--model` is forwarded as-is when given.
 
 ### capture
 
