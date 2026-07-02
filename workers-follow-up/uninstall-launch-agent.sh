@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-LABEL="com.ericfer.claude-squad-ui"
+LABEL="com.${USER}.claude-squad-ui"
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 UID_VALUE="$(id -u)"
 

@@ -2,12 +2,22 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-LABEL="com.ericfer.claude-squad-ui"
+LABEL="com.${USER}.claude-squad-ui"
+OLD_LABEL="com.${USER}.codex-squad-ui"
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
+OLD_PLIST="$HOME/Library/LaunchAgents/$OLD_LABEL.plist"
 LOG_DIR="$HOME/Library/Logs"
 UID_VALUE="$(id -u)"
 
 mkdir -p "$HOME/Library/LaunchAgents" "$LOG_DIR"
+
+if launchctl list | grep -q "$OLD_LABEL"; then
+  launchctl bootout "gui/$UID_VALUE/$OLD_LABEL" >/dev/null 2>&1 || true
+fi
+if [ -f "$OLD_PLIST" ]; then
+  rm -f "$OLD_PLIST"
+  echo "Removed old service $OLD_LABEL"
+fi
 
 cat > "$PLIST" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -30,9 +40,9 @@ cat > "$PLIST" <<PLIST
   <key>KeepAlive</key>
   <true/>
   <key>StandardOutPath</key>
-  <string>$LOG_DIR/claude-squad-ui.out.log</string>
+  <string>$LOG_DIR/$LABEL.out.log</string>
   <key>StandardErrorPath</key>
-  <string>$LOG_DIR/claude-squad-ui.err.log</string>
+  <string>$LOG_DIR/$LABEL.err.log</string>
 </dict>
 </plist>
 PLIST
@@ -50,5 +60,5 @@ launchctl kickstart -k "gui/$UID_VALUE/$LABEL"
 echo "Installed $LABEL"
 echo "URL: http://127.0.0.1:8787"
 echo "Logs:"
-echo "  $LOG_DIR/claude-squad-ui.out.log"
-echo "  $LOG_DIR/claude-squad-ui.err.log"
+echo "  $LOG_DIR/$LABEL.out.log"
+echo "  $LOG_DIR/$LABEL.err.log"
