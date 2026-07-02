@@ -14,7 +14,8 @@ Creates a new worker in an isolated tmux session.
 2. **Role** (optional): Predefined context (`worker`, `orchestrator`)
 3. **Ticket** (optional): Ticket ID to associate
 4. **Skill** (optional): Skills to activate at startup (repeatable)
-5. **Task** (required): The prompt/instruction for the worker
+5. **Model** (optional): Model for the worker — default `sonnet` (cost control)
+6. **Task** (required): The prompt/instruction for the worker
 
 ## Commands
 
@@ -33,7 +34,25 @@ Creates a new worker in an isolated tmux session.
 
 # Combine multiple skills
 ./squad spawn -s bmad:dev-story -s ralph-loop:ralph-loop "<task>"
+
+# Force a model (default: sonnet)
+./squad spawn --model opus --name <name> "<complex task>"
 ```
+
+## Model Policy (cost control)
+
+Claude workers launch with `--model sonnet` by default — do NOT let workers
+inherit the user default (Opus/Fable: expensive, slow). Override order:
+`--model` flag > `SQUAD_MODEL` env > default `sonnet`.
+
+| Model | Use for |
+|-------|---------|
+| `sonnet` (default) | Standard worker tasks: implement, fix, test, docs |
+| `opus` | Rare: complex refactoring/architecture explicitly worth the cost |
+| `haiku` | Trivial mechanical tasks (renames, bulk edits) |
+| `fable` | Never for workers — orchestrator-side story writing only |
+
+Codex workers get no default model; pass `--model` explicitly if needed.
 
 ## Ralph Loop Mode (--ralph)
 
