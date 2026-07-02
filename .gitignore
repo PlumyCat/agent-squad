@@ -11,22 +11,12 @@ venv/
 env/
 
 # Output
-output/
 exports/
 *.log
 
 # IDE
 .vscode/
 .idea/
-
-# Frames (too large to commit)
-frames/
-
-# Large files
-video.mp4
-tutorial.md
-*.jpg
-*.png
 
 # uv
 .uv/
@@ -42,8 +32,9 @@ settings.json
 
 # Session artifacts
 .playwright-mcp/
-workers-follow-up.zip
-wfu-dashboard-s5.jpeg
 
 # Per-session worker prompt files (squad spawn)
 .squad-prompts/
+
+# Local monitoring screenshots (regenerable, not tracked)
+workers-follow-up/screens/
