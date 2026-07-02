@@ -44,30 +44,18 @@ Browser notifications use the local Claude Squad icon bundled at
 ./workers-follow-up/install-launch-agent.sh
 ```
 
-The LaunchAgent (`com.ericfer.claude-squad-ui`) starts the UI at login and
+The LaunchAgent (`com.$USER.claude-squad-ui`) starts the UI at login and
 restarts it if it exits.
 
-### Migrating from the old `codex-squad-ui` service
-
-The service was renamed from `com.ericfer.codex-squad-ui` to
-`com.ericfer.claude-squad-ui`. If the old service was previously installed, the
-old plist is still loaded under the old label. Uninstall it **before** installing
-the new one, otherwise both services fight over port 8787:
-
-```bash
-# remove the previously-loaded service (old label)
-launchctl bootout "gui/$(id -u)/com.ericfer.codex-squad-ui" 2>/dev/null || true
-rm -f "$HOME/Library/LaunchAgents/com.ericfer.codex-squad-ui.plist"
-
-# then install the renamed service
-./workers-follow-up/install-launch-agent.sh
-```
+> Migrating from the old `codex-squad-ui` service is automatic: the install
+> script detects a loaded `com.$USER.codex-squad-ui` service, boots it out,
+> and removes its plist before installing the renamed service.
 
 If a previous instance is already holding port 8787, reload the service so it
 picks up new code:
 
 ```bash
-launchctl kickstart -k "gui/$(id -u)/com.ericfer.claude-squad-ui"
+launchctl kickstart -k "gui/$(id -u)/com.$USER.claude-squad-ui"
 ```
 
 To uninstall:
