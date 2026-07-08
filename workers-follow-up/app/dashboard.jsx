@@ -80,9 +80,12 @@ function WorkerRow({ w, pad, onOpenWorker, onRespond, onOpenTicket, showActionsC
         </span>
       </td>
       <td style={{ padding: pad }}>
-        {w.ticket_id
-          ? <button className="linkish font-mono" onClick={(e) => { e.stopPropagation(); onOpenTicket(w.ticket_id); }} style={{ fontSize: 12, background: 'none', border: 'none', padding: 0 }}>{w.ticket_id}</button>
-          : <span className="badge" style={{ '--sc': 'var(--fg-4)' }}><Icon name="link_off" size={11} /> sans ticket</span>}
+        <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+          {w.ticket_id
+            ? <button className="linkish font-mono" onClick={(e) => { e.stopPropagation(); onOpenTicket(w.ticket_id); }} style={{ fontSize: 12, background: 'none', border: 'none', padding: 0 }}>{w.ticket_id}</button>
+            : <span className="badge" style={{ '--sc': 'var(--fg-4)' }}><Icon name="link_off" size={11} /> sans ticket</span>}
+          {w.linear_issue ? <LinearLink id={w.linear_issue} /> : null}
+        </span>
       </td>
       <td style={{ padding: pad }}><span className="font-label fg-2" style={{ fontSize: 12 }}>{w.role || '—'}</span></td>
       <td style={{ padding: pad }}><span className="font-mono fg-3" style={{ fontSize: 11.5 }}><RelTime date={w.last_activity_at} /></span></td>
