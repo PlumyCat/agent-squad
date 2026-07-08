@@ -60,6 +60,23 @@ function RelTime({ date, tick }) {
   return <span>{window.CSQ.fmtRel(date)}</span>;
 }
 
+/* Clickable Linear issue id (e.g. MYL-181), opens the issue in a new tab.
+   Additive next to the local ticket hash — never replaces it. */
+function LinearLink({ id, size = 12 }) {
+  if (!id) return null;
+  return (
+    <a
+      href={'https://linear.app/mylinearwk/issue/' + id}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      className="font-mono"
+      style={{ fontSize: size, color: 'var(--primary)', textDecoration: 'none' }}
+      title={'Ouvrir ' + id + ' dans Linear'}
+    >{id}</a>
+  );
+}
+
 function StatusBadge({ kind, type = 'worker', size }) {
   const dict = type === 'worker' ? window.CSQ.WORKER_STATUS : window.CSQ.TICKET_STATUS;
   const s = dict[kind] || dict.unknown || { label: kind, cls: 'st-unknown', icon: 'help' };
@@ -321,4 +338,4 @@ function SignalRow({ tone, icon, label, n, onClick }) {
   );
 }
 
-Object.assign(window, { Icon, RelTime, StatusBadge, WDot, AgentChip, Avatar, StatTile, SectionHead, EmptyState, TopNav, Sidebar, SignalRow, SignalDot });
+Object.assign(window, { Icon, RelTime, LinearLink, StatusBadge, WDot, AgentChip, Avatar, StatTile, SectionHead, EmptyState, TopNav, Sidebar, SignalRow, SignalDot });

@@ -62,7 +62,10 @@ function WorkerPanel({ worker, logs, ticket, onClose, onAction, onOpenTicket }) 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, padding: '12px 16px', borderBottom: '1px solid var(--border-hairline)', flex: 'none' }}>
           <MetaItem label="Rôle">{w.role || '—'}</MetaItem>
           <MetaItem label="Ticket">
-            {w.ticket_id ? <span className="linkish font-mono" onClick={() => onOpenTicket(w.ticket_id)} style={{ fontSize: 12 }}>{w.ticket_id}</span> : <span className="fg-4">sans ticket</span>}
+            <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+              {w.ticket_id ? <span className="linkish font-mono" onClick={() => onOpenTicket(w.ticket_id)} style={{ fontSize: 12 }}>{w.ticket_id}</span> : <span className="fg-4">sans ticket</span>}
+              {w.linear_issue ? <LinearLink id={w.linear_issue} /> : null}
+            </span>
           </MetaItem>
           <MetaItem label="Démarré">{window.CSQ.fmtDuration(w.created_at)} </MetaItem>
           <MetaItem label="Activité"><RelTime date={w.last_activity_at} /></MetaItem>

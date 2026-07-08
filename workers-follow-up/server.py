@@ -31,8 +31,10 @@ WEB_ROOT = Path(__file__).resolve().parent
 TICKETS_DIR = ROOT / "tickets-cli" / "tickets"
 WAITING_DIR = ROOT / "signals" / "waiting"
 RESPONSES_DIR = ROOT / "signals" / "responses"
+RUNS_DIR = ROOT / ".squad-runs"
 WORKER_PREFIXES = ("codex-", "claude-")
 SESSION_RE = re.compile(r"^(codex|claude)-[A-Za-z0-9_.-]+$")
+LINEAR_ISSUE_RE = re.compile(r"\b[A-Z]{2,6}-\d+\b")
 
 mimetypes.add_type("text/babel; charset=utf-8", ".jsx")
 
@@ -44,10 +46,10 @@ def active_provider() -> str:
 
 # Map a worker_actions.kill_worker ``reason`` to an HTTP status code.
 _KILL_STATUS_BY_REASON = {
-    "invalid": 400,      # malformed / missing identifier
-    "in-process": 409,   # Agent Teams worker — no tmux pane to kill
-    "not-found": 404,    # valid session name but no live tmux session
-    "tmux-error": 500,   # tmux ran but failed
+    "invalid": 400,  # malformed / missing identifier
+    "in-process": 409,  # Agent Teams worker — no tmux pane to kill
+    "not-found": 404,  # valid session name but no live tmux session
+    "tmux-error": 500,  # tmux ran but failed
 }
 
 
@@ -58,7 +60,9 @@ def utc_now() -> str:
 def iso_from_epoch(value: str | int | None) -> str:
     if not value:
         return utc_now()
-    return datetime.fromtimestamp(int(value), tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.fromtimestamp(int(value), tz=timezone.utc).strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
+    )
 
 
 def run_tmux(*args: str) -> subprocess.CompletedProcess[str]:
@@ -80,6 +84,33 @@ def read_json(path: Path) -> dict | None:
         return None
 
 
+def session_meta(session: str | None) -> dict | None:
+    """Read .squad-runs/<session>.meta.json written by `claude-cli spawn --linear`."""
+    if not session:
+        return None
+    return read_json(RUNS_DIR / f"{session}.meta.json")
+
+
+def linear_issue_from_title(title: str | None) -> str | None:
+    """Extract a Linear ID (e.g. MYL-181) from a ticket title like 'MYL-181 S-01: ...'."""
+    if not title:
+        return None
+    match = LINEAR_ISSUE_RE.search(title)
+    return match.group(0) if match else None
+
+
+def linear_issue_for(session: str | None, title: str | None) -> str | None:
+    """Resolve the Linear issue for a session: meta.json first, else title regex."""
+    meta = session_meta(session)
+    if meta and meta.get("linear_issue"):
+        return meta["linear_issue"]
+    return linear_issue_from_title(title)
+
+
+def linear_url(issue_id: str | None) -> str | None:
+    return f"https://linear.app/mylinearwk/issue/{issue_id}" if issue_id else None
+
+
 def load_tickets() -> list[dict]:
     tickets = []
     if not TICKETS_DIR.exists():
@@ -92,27 +123,41 @@ def load_tickets() -> list[dict]:
 
         history = []
         for item in raw.get("history", []):
-            timestamp = item.get("timestamp") or item.get("t") or raw.get("updated_at") or utc_now()
+            timestamp = (
+                item.get("timestamp")
+                or item.get("t")
+                or raw.get("updated_at")
+                or utc_now()
+            )
             action = item.get("action", "updated")
             if action == "status_change":
                 text = f"Statut -> {item.get('to', 'unknown')}"
             else:
                 text = item.get("details") or item.get("text") or action
-            history.append({"t": timestamp, "who": item.get("who", "squad"), "text": text})
+            history.append(
+                {"t": timestamp, "who": item.get("who", "squad"), "text": text}
+            )
+
+        title = raw.get("title", path.stem)
+        linear_issue = linear_issue_for(raw.get("assigned_to"), title)
 
         tickets.append(
             {
                 "id": raw.get("id", path.stem),
-                "title": raw.get("title", path.stem),
+                "title": title,
                 "body": raw.get("body", ""),
                 "status": raw.get("status", "open"),
                 "assigned_to": raw.get("assigned_to"),
                 "created_at": raw.get("created_at") or utc_now(),
-                "updated_at": raw.get("updated_at") or raw.get("created_at") or utc_now(),
+                "updated_at": raw.get("updated_at")
+                or raw.get("created_at")
+                or utc_now(),
                 "history": history,
                 "comments": raw.get("comments", []),
                 "labels": raw.get("labels", []),
                 "priority": raw.get("priority", "medium"),
+                "linear_issue": linear_issue,
+                "linear_url": linear_url(linear_issue),
             }
         )
 
@@ -121,9 +166,7 @@ def load_tickets() -> list[dict]:
 
 def ticket_by_worker(tickets: list[dict]) -> dict[str, dict]:
     return {
-        ticket["assigned_to"]: ticket
-        for ticket in tickets
-        if ticket.get("assigned_to")
+        ticket["assigned_to"]: ticket for ticket in tickets if ticket.get("assigned_to")
     }
 
 
@@ -174,7 +217,12 @@ def log_entries(session: str, lines: int = 120) -> list[dict]:
     captured = capture_lines(session, lines)
     stamp = utc_now()
     return [
-        {"id": f"{session}-{index}", "time": stamp, "kind": classify_log_line(line), "text": line}
+        {
+            "id": f"{session}-{index}",
+            "time": stamp,
+            "kind": classify_log_line(line),
+            "text": line,
+        }
         for index, line in enumerate(captured)
         if line.strip()
     ]
@@ -232,6 +280,13 @@ def load_workers(tickets: list[dict]) -> tuple[list[dict], dict[str, list[dict]]
         else:
             status = "running"
 
+        # ticket["linear_issue"] already resolved meta.json-first for this same
+        # session; fall back to a direct meta.json lookup for ticket-less workers
+        # spawned with --linear but no --ticket.
+        linear_issue = (ticket or {}).get("linear_issue") or linear_issue_for(
+            session, None
+        )
+
         workers.append(
             {
                 "id": session,
@@ -240,16 +295,24 @@ def load_workers(tickets: list[dict]) -> tuple[list[dict], dict[str, list[dict]]
                 "session": session,
                 "status": status,
                 "role": "Worker",
-                "ticket_id": (signal or {}).get("ticket_id") or (ticket or {}).get("id"),
+                "ticket_id": (signal or {}).get("ticket_id")
+                or (ticket or {}).get("id"),
                 "created_at": created,
                 "last_activity_at": activity,
                 "exit_code": exit_code,
                 "output": output,
                 "waiting_question": (signal or {}).get("message"),
+                "linear_issue": linear_issue,
+                "linear_url": linear_url(linear_issue),
             }
         )
         logs[session] = [
-            {"id": f"{session}-{index}", "time": activity, "kind": classify_log_line(line), "text": line}
+            {
+                "id": f"{session}-{index}",
+                "time": activity,
+                "kind": classify_log_line(line),
+                "text": line,
+            }
             for index, line in enumerate(lines)
             if line.strip()
         ]
@@ -326,7 +389,9 @@ class Handler(SimpleHTTPRequestHandler):
             return
 
         if path.startswith("/api/workers/") and path.endswith("/logs"):
-            session = path.removeprefix("/api/workers/").removesuffix("/logs").strip("/")
+            session = (
+                path.removeprefix("/api/workers/").removesuffix("/logs").strip("/")
+            )
             # Dispatch by identifier shape, not by global provider: Agent Teams
             # workers are "name@team" (transcript JSONL), legacy codex workers
             # are tmux session names (capture-pane). Both pages work at once.
@@ -351,14 +416,18 @@ class Handler(SimpleHTTPRequestHandler):
         path = unquote(parsed.path)
 
         if path.startswith("/api/workers/") and path.endswith("/kill"):
-            worker_id = path.removeprefix("/api/workers/").removesuffix("/kill").strip("/")
+            worker_id = (
+                path.removeprefix("/api/workers/").removesuffix("/kill").strip("/")
+            )
             # Delegate to providers.worker_actions, which decides per identifier
             # whether a kill is possible: legacy tmux sessions (codex-*/claude-*)
             # are killed; in-process Agent Teams workers ("name@team") are
             # refused cleanly. The worker id already carries its team via "@team",
             # so no separate team argument is needed here.
             outcome = worker_actions.kill_worker("", worker_id)
-            status = _KILL_STATUS_BY_REASON.get(outcome.get("reason"), 200 if outcome.get("ok") else 500)
+            status = _KILL_STATUS_BY_REASON.get(
+                outcome.get("reason"), 200 if outcome.get("ok") else 500
+            )
             self.send_json(outcome, status=status)
             return
 

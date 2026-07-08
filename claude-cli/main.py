@@ -360,6 +360,11 @@ def cli():
     default=None,
     help="Model for the worker (alias like sonnet/opus/haiku or full ID). Priority: --model > SQUAD_MODEL env > per-agent default (claude: sonnet).",
 )
+@click.option(
+    "--linear",
+    default=None,
+    help="Linear issue ID (e.g. MYL-181) linked to this worker. Persists to .squad-runs/<session>.meta.json and is injected into the worker's prompt. Omit for no change in behavior.",
+)
 def spawn(
     prompt: str,
     name: str | None,
@@ -370,6 +375,7 @@ def spawn(
     workdir: str | None,
     agent: str | None,
     model: str | None,
+    linear: str | None,
 ):
     """Spawn a worker in a new tmux session.
 
@@ -385,6 +391,7 @@ def spawn(
         spawn --ralph --role worker --ticket abc123 "Complex feature"
         spawn --skill bmad:dev-story "Workflow-driven task"
         spawn --model opus "Complex refactoring worth the extra cost"
+        spawn --ticket abc123 --linear MYL-181 "Implement feature"
     """
     agent = normalize_agent(agent)
     prefix = AGENTS[agent]["prefix"]
@@ -428,6 +435,25 @@ def spawn(
                 cwd=tickets_cli_path,
                 capture_output=True,
             )
+
+    # Declare and persist the worker <-> Linear issue link, if provided.
+    # Read back by workers-follow-up/server.py to surface a clickable Linear
+    # ID in the dashboard's TICKET column. Optional: omitting --linear leaves
+    # spawn's behavior exactly as before.
+    if linear:
+        full_prompt += f"\n\nTu travailles sur l'issue Linear {linear}."
+        click.echo(f"Linked Linear issue: {linear}")
+        runs_dir = Path(__file__).parent.parent / ".squad-runs"
+        runs_dir.mkdir(exist_ok=True)
+        meta_path = runs_dir / f"{session}.meta.json"
+        meta_path.write_text(
+            json.dumps(
+                {"session": session, "linear_issue": linear, "ticket_id": ticket},
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
 
     # Create tmux session with the selected agent CLI.
     # Start in project root so ./tickets and other CLIs are accessible.
